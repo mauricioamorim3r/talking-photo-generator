@@ -649,7 +649,7 @@ async def generate_video(request: GenerateVideoRequest):
         sanitized_prompt = sanitize_prompt(request.prompt)
         
         if original_prompt != sanitized_prompt:
-            logger.warning(f"⚠️ PROMPT SANITIZED!")
+            logger.warning("⚠️ PROMPT SANITIZED!")
             logger.warning(f"REMOVED {len(original_prompt) - len(sanitized_prompt)} characters")
             logger.warning(f"CLEAN PROMPT: {sanitized_prompt[:300]}")
         else:
