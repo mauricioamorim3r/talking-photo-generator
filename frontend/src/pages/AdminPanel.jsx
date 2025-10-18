@@ -218,6 +218,242 @@ const AdminPanel = () => {
             </motion.div>
           </div>
 
+          {/* API Balances Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mt-8"
+          >
+            <Card data-testid="balances-card">
+              <CardHeader>
+                <CardTitle>Saldos das APIs</CardTitle>
+                <CardDescription>
+                  Gerencie os saldos disponíveis em cada serviço
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="balances-grid">
+                  {/* FAL.AI Balance */}
+                  <div className="balance-card">
+                    <div className="balance-header">
+                      <h4>FAL.AI (Vídeos)</h4>
+                      {editingBalance === 'fal_ai' ? (
+                        <div className="balance-edit-actions">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleUpdateBalance('fal_ai')}
+                            data-testid="save-fal-balance"
+                          >
+                            <Save className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingBalance(null);
+                              setNewBalance('');
+                            }}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditingBalance('fal_ai');
+                            setNewBalance(usageData?.balances?.fal_ai?.initial?.toString() || '');
+                          }}
+                          data-testid="edit-fal-balance"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                    {editingBalance === 'fal_ai' ? (
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={newBalance}
+                        onChange={(e) => setNewBalance(e.target.value)}
+                        placeholder="Saldo inicial"
+                        data-testid="fal-balance-input"
+                      />
+                    ) : (
+                      <div className="balance-info">
+                        <div className="balance-row">
+                          <span>Saldo Inicial:</span>
+                          <span className="balance-value" data-testid="fal-initial-balance">
+                            ${usageData?.balances?.fal_ai?.initial?.toFixed(2) || '0.00'}
+                          </span>
+                        </div>
+                        <div className="balance-row">
+                          <span>Gasto:</span>
+                          <span className="balance-spent">
+                            ${usageData?.balances?.fal_ai?.spent?.toFixed(2) || '0.00'}
+                          </span>
+                        </div>
+                        <div className="balance-row balance-remaining">
+                          <span>Saldo Restante:</span>
+                          <span className={usageData?.balances?.fal_ai?.remaining > 0 ? 'text-green-600' : 'text-red-600'} data-testid="fal-remaining-balance">
+                            ${usageData?.balances?.fal_ai?.remaining?.toFixed(2) || '0.00'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ElevenLabs Balance */}
+                  <div className="balance-card">
+                    <div className="balance-header">
+                      <h4>ElevenLabs (Áudios)</h4>
+                      {editingBalance === 'elevenlabs' ? (
+                        <div className="balance-edit-actions">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleUpdateBalance('elevenlabs')}
+                            data-testid="save-elevenlabs-balance"
+                          >
+                            <Save className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingBalance(null);
+                              setNewBalance('');
+                            }}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditingBalance('elevenlabs');
+                            setNewBalance(usageData?.balances?.elevenlabs?.initial?.toString() || '');
+                          }}
+                          data-testid="edit-elevenlabs-balance"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                    {editingBalance === 'elevenlabs' ? (
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={newBalance}
+                        onChange={(e) => setNewBalance(e.target.value)}
+                        placeholder="Saldo inicial"
+                        data-testid="elevenlabs-balance-input"
+                      />
+                    ) : (
+                      <div className="balance-info">
+                        <div className="balance-row">
+                          <span>Saldo Inicial:</span>
+                          <span className="balance-value" data-testid="elevenlabs-initial-balance">
+                            ${usageData?.balances?.elevenlabs?.initial?.toFixed(2) || '0.00'}
+                          </span>
+                        </div>
+                        <div className="balance-row">
+                          <span>Gasto:</span>
+                          <span className="balance-spent">
+                            ${usageData?.balances?.elevenlabs?.spent?.toFixed(2) || '0.00'}
+                          </span>
+                        </div>
+                        <div className="balance-row balance-remaining">
+                          <span>Saldo Restante:</span>
+                          <span className={usageData?.balances?.elevenlabs?.remaining > 0 ? 'text-green-600' : 'text-red-600'} data-testid="elevenlabs-remaining-balance">
+                            ${usageData?.balances?.elevenlabs?.remaining?.toFixed(2) || '0.00'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Gemini Balance */}
+                  <div className="balance-card">
+                    <div className="balance-header">
+                      <h4>Gemini (Análise IA)</h4>
+                      {editingBalance === 'gemini' ? (
+                        <div className="balance-edit-actions">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleUpdateBalance('gemini')}
+                            data-testid="save-gemini-balance"
+                          >
+                            <Save className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingBalance(null);
+                              setNewBalance('');
+                            }}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditingBalance('gemini');
+                            setNewBalance(usageData?.balances?.gemini?.initial?.toString() || '');
+                          }}
+                          data-testid="edit-gemini-balance"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                    {editingBalance === 'gemini' ? (
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={newBalance}
+                        onChange={(e) => setNewBalance(e.target.value)}
+                        placeholder="Saldo inicial"
+                        data-testid="gemini-balance-input"
+                      />
+                    ) : (
+                      <div className="balance-info">
+                        <div className="balance-row">
+                          <span>Saldo Inicial:</span>
+                          <span className="balance-value" data-testid="gemini-initial-balance">
+                            ${usageData?.balances?.gemini?.initial?.toFixed(2) || '0.00'}
+                          </span>
+                        </div>
+                        <div className="balance-row">
+                          <span>Gasto:</span>
+                          <span className="balance-spent">
+                            ${usageData?.balances?.gemini?.spent?.toFixed(2) || '0.00'}
+                          </span>
+                        </div>
+                        <div className="balance-row balance-remaining">
+                          <span>Saldo Restante:</span>
+                          <span className={usageData?.balances?.gemini?.remaining > 0 ? 'text-green-600' : 'text-red-600'} data-testid="gemini-remaining-balance">
+                            ${usageData?.balances?.gemini?.remaining?.toFixed(2) || '0.00'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
           {/* Recent Operations */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
