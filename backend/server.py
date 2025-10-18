@@ -1064,30 +1064,52 @@ async def generate_image_with_nano_banana(request: GenerateImageRequest):
         
         # Use Emergent LLM with Gemini for image generation
         from emergentintegrations.llm.chat import LlmChat, UserMessage
+        import base64
         
         chat = LlmChat(
             api_key=os.environ.get('EMERGENT_LLM_KEY', ''),
             session_id=str(uuid.uuid4()),
-            system_message="You are an expert AI image generator. Generate high-quality images based on user prompts."
-        ).with_model("gemini", "gemini-2.5-flash-image")
+            system_message="You are an expert AI image generator. Generate high-quality, creative images based on user prompts."
+        ).with_model("gemini", "gemini-2.5-flash-image-preview").with_params(modalities=["image", "text"])
         
         user_message = UserMessage(text=request.prompt)
         
         # Generate image with timeout
         import asyncio
         try:
-            response = await asyncio.wait_for(
-                chat.send_message(user_message),
+            # Use multimodal response to get images
+            text_response, images = await asyncio.wait_for(
+                chat.send_message_multimodal_response(user_message),
                 timeout=60.0  # 60 seconds timeout for image generation
             )
             
-            # The response should contain the generated image
-            # For Gemini image generation, we need to handle the response differently
-            logger.info(f"✅ Image generation response received")
+            logger.info(f"✅ Image generation response received: {len(images) if images else 0} images")
             
-            # Parse image from response (base64 or URL)
-            # Note: The exact response format depends on Emergent integrations implementation
-            # For now, we'll save the response and let frontend handle it
+            if not images or len(images) == 0:
+                raise HTTPException(status_code=500, detail="No image generated")
+            
+            # Get the first generated image
+            generated_image_data = images[0]
+            image_base64 = generated_image_data['data']
+            mime_type = generated_image_data.get('mime_type', 'image/png')
+            
+            # Upload to Cloudinary for storage
+            try:
+                # Decode base64 to upload
+                image_bytes = base64.b64decode(image_base64)
+                upload_result = cloudinary.uploader.upload(
+                    f"data:{mime_type};base64,{image_base64}",
+                    folder="generated_images",
+                    resource_type="image"
+                )
+                image_url = upload_result['secure_url']
+                cloudinary_id = upload_result['public_id']
+                logger.info(f"✅ Image uploaded to Cloudinary: {cloudinary_id}")
+            except Exception as cloudinary_error:
+                logger.warning(f"Cloudinary upload failed: {str(cloudinary_error)}, using base64")
+                # Fallback: use base64 data URL
+                image_url = f"data:{mime_type};base64,{image_base64}"
+                cloudinary_id = None
             
             image_id = str(uuid.uuid4())
             
@@ -1095,12 +1117,14 @@ async def generate_image_with_nano_banana(request: GenerateImageRequest):
             generated_image = GeneratedImage(
                 id=image_id,
                 prompt=request.prompt,
-                image_url=f"data:image/png;base64,{response}",  # Placeholder - adjust based on actual response
+                image_url=image_url,
                 cost=0.039
             )
             
             doc = generated_image.model_dump()
             doc['timestamp'] = doc['timestamp'].isoformat()
+            if cloudinary_id:
+                doc['cloudinary_id'] = cloudinary_id
             await db.generated_images.insert_one(doc)
             
             # Track cost
@@ -1108,7 +1132,7 @@ async def generate_image_with_nano_banana(request: GenerateImageRequest):
                 service="Gemini Image Generation",
                 operation="generate_image",
                 cost=0.039,
-                details={"prompt_length": len(request.prompt)}
+                details={"prompt_length": len(request.prompt), "model": "gemini-2.5-flash-image"}
             )
             usage_doc = usage.model_dump()
             usage_doc['timestamp'] = usage_doc['timestamp'].isoformat()
@@ -1117,8 +1141,10 @@ async def generate_image_with_nano_banana(request: GenerateImageRequest):
             return {
                 "success": True,
                 "image_id": image_id,
-                "image_data": response,
-                "cost": 0.039
+                "image_url": image_url,
+                "prompt": request.prompt,
+                "cost": 0.039,
+                "text_response": text_response if text_response else None
             }
             
         except asyncio.TimeoutError:
