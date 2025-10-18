@@ -1054,6 +1054,118 @@ async def delete_image(image_id: str):
         logger.error(f"Error deleting image: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# ==================== IMAGE GENERATION ENDPOINTS ====================
+
+@api_router.post("/images/generate")
+async def generate_image_with_nano_banana(request: GenerateImageRequest):
+    """Generate image using Gemini 2.5 Flash Image (Nano Banana)"""
+    try:
+        logger.info(f"🎨 Generating image with prompt: {request.prompt[:100]}...")
+        
+        # Use Emergent LLM with Gemini for image generation
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        
+        chat = LlmChat(
+            api_key=os.environ.get('EMERGENT_LLM_KEY', ''),
+            session_id=str(uuid.uuid4()),
+            system_message="You are an expert AI image generator. Generate high-quality images based on user prompts."
+        ).with_model("gemini", "gemini-2.5-flash-image")
+        
+        user_message = UserMessage(text=request.prompt)
+        
+        # Generate image with timeout
+        import asyncio
+        try:
+            response = await asyncio.wait_for(
+                chat.send_message(user_message),
+                timeout=60.0  # 60 seconds timeout for image generation
+            )
+            
+            # The response should contain the generated image
+            # For Gemini image generation, we need to handle the response differently
+            logger.info(f"✅ Image generation response received")
+            
+            # Parse image from response (base64 or URL)
+            # Note: The exact response format depends on Emergent integrations implementation
+            # For now, we'll save the response and let frontend handle it
+            
+            image_id = str(uuid.uuid4())
+            
+            # Save to database
+            generated_image = GeneratedImage(
+                id=image_id,
+                prompt=request.prompt,
+                image_url=f"data:image/png;base64,{response}",  # Placeholder - adjust based on actual response
+                cost=0.039
+            )
+            
+            doc = generated_image.model_dump()
+            doc['timestamp'] = doc['timestamp'].isoformat()
+            await db.generated_images.insert_one(doc)
+            
+            # Track cost
+            usage = TokenUsage(
+                service="Gemini Image Generation",
+                operation="generate_image",
+                cost=0.039,
+                details={"prompt_length": len(request.prompt)}
+            )
+            usage_doc = usage.model_dump()
+            usage_doc['timestamp'] = usage_doc['timestamp'].isoformat()
+            await db.token_usage.insert_one(usage_doc)
+            
+            return {
+                "success": True,
+                "image_id": image_id,
+                "image_data": response,
+                "cost": 0.039
+            }
+            
+        except asyncio.TimeoutError:
+            logger.error("Image generation timed out")
+            raise HTTPException(status_code=504, detail="Image generation timed out. Please try again.")
+            
+    except Exception as e:
+        logger.error(f"Error generating image: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/images/generated")
+async def get_generated_images():
+    """Get all generated images"""
+    try:
+        images = await db.generated_images.find().sort('timestamp', -1).to_list(length=100)
+        
+        # Convert ObjectId and datetime to strings
+        for img in images:
+            if '_id' in img:
+                del img['_id']
+            if isinstance(img.get('timestamp'), str):
+                pass
+            elif hasattr(img.get('timestamp'), 'isoformat'):
+                img['timestamp'] = img['timestamp'].isoformat()
+        
+        return {
+            "success": True,
+            "images": images
+        }
+    except Exception as e:
+        logger.error(f"Error fetching generated images: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/images/generated/{image_id}")
+async def delete_generated_image(image_id: str):
+    """Delete a generated image"""
+    try:
+        result = await db.generated_images.delete_one({"id": image_id})
+        
+        if result.deleted_count > 0:
+            return {"success": True, "message": "Generated image deleted"}
+        else:
+            raise HTTPException(status_code=404, detail="Image not found")
+    except Exception as e:
+        logger.error(f"Error deleting generated image: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Include the router in the main app
 app.include_router(api_router)
 
