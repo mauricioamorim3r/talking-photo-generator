@@ -456,6 +456,187 @@ class VideoGenAPITester:
             print(f"   ❌ Timeout test failed")
             return False, {}
 
+    def test_sora2_video_generation(self):
+        """Test Sora 2 video generation with updated FAL_KEY"""
+        print(f"\n🎬 Testing Sora 2 Video Generation...")
+        
+        test_image_url = "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400"
+        
+        video_data = {
+            "image_url": test_image_url,
+            "model": "sora2",
+            "mode": "premium",
+            "prompt": "Cat looking up with curiosity, ears moving, eyes focused. Medium shot, natural lighting.",
+            "duration": 5
+        }
+        
+        success, response = self.run_test(
+            "Sora 2 Video Generation", 
+            "POST", 
+            "video/generate", 
+            200, 
+            data=video_data,
+            timeout=120  # Longer timeout for video generation
+        )
+        
+        if success and response.get('success'):
+            video_url = response.get('video_url')
+            cost = response.get('cost', 0)
+            print(f"   ✅ Sora 2 video generated successfully")
+            print(f"      - Video URL: {video_url}")
+            print(f"      - Cost: ${cost:.2f}")
+            return True, response
+        else:
+            print(f"   ❌ Sora 2 video generation failed")
+            return False, {}
+
+    def test_veo3_video_generation(self):
+        """Test Veo 3 video generation with updated FAL_KEY"""
+        print(f"\n🎬 Testing Veo 3 Video Generation...")
+        
+        test_image_url = "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400"
+        
+        video_data = {
+            "image_url": test_image_url,
+            "model": "veo3",
+            "mode": "premium",
+            "prompt": "Cat turning head slowly, cinematic close-up, soft lighting.",
+            "duration": 5
+        }
+        
+        success, response = self.run_test(
+            "Veo 3 Video Generation", 
+            "POST", 
+            "video/generate", 
+            200, 
+            data=video_data,
+            timeout=120  # Longer timeout for video generation
+        )
+        
+        if success and response.get('success'):
+            video_url = response.get('video_url')
+            cost = response.get('cost', 0)
+            print(f"   ✅ Veo 3 video generated successfully")
+            print(f"      - Video URL: {video_url}")
+            print(f"      - Cost: ${cost:.2f}")
+            return True, response
+        else:
+            print(f"   ❌ Veo 3 video generation failed")
+            return False, {}
+
+    def test_fal_key_authentication(self):
+        """Test FAL_KEY authentication by attempting video generation"""
+        print(f"\n🔑 Testing FAL_KEY Authentication...")
+        
+        # Test with minimal request to check authentication
+        test_image_url = "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400"
+        
+        video_data = {
+            "image_url": test_image_url,
+            "model": "sora2",
+            "mode": "premium", 
+            "prompt": "Simple test prompt",
+            "duration": 5
+        }
+        
+        print(f"   Testing authentication with FAL_KEY...")
+        
+        success, response = self.run_test(
+            "FAL_KEY Authentication Test", 
+            "POST", 
+            "video/generate", 
+            200, 
+            data=video_data,
+            timeout=60
+        )
+        
+        if success:
+            print(f"   ✅ FAL_KEY authentication successful")
+            return True, response
+        else:
+            # Check if it's specifically an authentication error
+            error_msg = str(response)
+            if 'No user found' in error_msg or 'authentication' in error_msg.lower():
+                print(f"   ❌ FAL_KEY authentication failed: {error_msg}")
+                self.log_test("FAL_KEY Authentication", False, 
+                             error=f"Authentication failed: {error_msg}")
+            else:
+                print(f"   ⚠️ Other error occurred: {error_msg}")
+            return False, {}
+
+    def run_fal_video_generation_test(self):
+        """Run comprehensive FAL video generation tests with updated key"""
+        print("🚀 Starting FAL Video Generation Testing with Updated Key")
+        print("=" * 70)
+        print("FAL_KEY: bc159ba6-83c6-45eb-866e-53e2e7b80416:dad0dac31d8d9f3ee237ba22fb1f1e7d")
+        print("=" * 70)
+        
+        # Basic connectivity
+        self.test_root_endpoint()
+        
+        # Test FAL authentication first
+        auth_success, auth_response = self.test_fal_key_authentication()
+        
+        if auth_success:
+            print(f"\n✅ FAL_KEY authentication working - proceeding with video tests")
+            
+            # Test Sora 2 video generation
+            sora2_success, sora2_response = self.test_sora2_video_generation()
+            
+            # Test Veo 3 video generation  
+            veo3_success, veo3_response = self.test_veo3_video_generation()
+            
+            # Test cost estimation for both models
+            self.test_cost_estimation()
+            
+        else:
+            print(f"\n❌ FAL_KEY authentication failed - skipping video generation tests")
+            print(f"   Need to investigate FAL_KEY configuration")
+        
+        # Test other endpoints that don't require FAL
+        print(f"\n🔍 Testing other API endpoints...")
+        self.test_voices_endpoint()
+        self.test_gallery_endpoints()
+        self.test_token_usage()
+        
+        # Print detailed summary
+        print("\n" + "=" * 70)
+        print(f"📊 FAL VIDEO GENERATION TESTING SUMMARY")
+        print("=" * 70)
+        print(f"Tests Run: {self.tests_run}")
+        print(f"Tests Passed: {self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%")
+        
+        # Categorize results
+        critical_failures = []
+        minor_failures = []
+        
+        for result in self.test_results:
+            if not result['success']:
+                if any(term in result['test_name'].lower() for term in 
+                      ['fal', 'sora', 'veo', 'video generation', 'authentication']):
+                    critical_failures.append(result)
+                else:
+                    minor_failures.append(result)
+        
+        if critical_failures:
+            print(f"\n🚨 CRITICAL FAILURES (FAL Video Generation):")
+            for result in critical_failures:
+                print(f"   - {result['test_name']}: {result['error']}")
+        
+        if minor_failures:
+            print(f"\n⚠️ MINOR FAILURES:")
+            for result in minor_failures:
+                print(f"   - {result['test_name']}: {result['error']}")
+        
+        if not critical_failures:
+            if not minor_failures:
+                print(f"\n✅ ALL TESTS PASSED - FAL video generation working correctly!")
+            else:
+                print(f"\n✅ CRITICAL TESTS PASSED - FAL video generation working (minor issues noted)")
+        
+        return len(critical_failures) == 0  # Success if no critical failures
+
     def run_comprehensive_test(self):
         """Run all backend tests with focus on model-specific prompts"""
         print("🚀 Starting Model-Specific Prompt Generation Testing")
