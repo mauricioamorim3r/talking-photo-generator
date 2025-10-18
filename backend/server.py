@@ -702,12 +702,14 @@ async def generate_video(request: GenerateVideoRequest):
             # Premium models via FAL.AI
             if request.model == "veo3":
                 import asyncio
+                # Veo 3 only accepts "8s" duration format
+                veo3_duration = "8s"  # Fixed duration for Veo 3
                 handler = fal_client.submit(
                     "fal-ai/veo3.1/image-to-video",
                     arguments={
                         "image_url": request.image_url,
                         "prompt": sanitized_prompt,  # Use sanitized prompt
-                        "duration": request.duration
+                        "duration": veo3_duration
                     }
                 )
                 # Run in executor to avoid blocking
