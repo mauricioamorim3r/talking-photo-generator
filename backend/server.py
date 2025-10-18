@@ -154,24 +154,47 @@ async def root():
 
 @api_router.post("/images/upload")
 async def upload_image(file: UploadFile = File(...)):
-    """Upload image to Cloudinary"""
+    """Upload image - save locally"""
     try:
         contents = await file.read()
         
-        # Upload to Cloudinary
-        result = cloudinary.uploader.upload(
-            contents,
-            folder="video-gen",
-            upload_preset=os.environ.get('CLOUDINARY_UPLOAD_PRESET', 'ml_default')
-        )
+        # Save locally
+        upload_dir = Path("/app/backend/uploads")
+        upload_dir.mkdir(exist_ok=True)
+        
+        # Generate unique filename
+        file_id = str(uuid.uuid4())
+        file_ext = file.filename.split('.')[-1] if '.' in file.filename else 'jpg'
+        filename = f"{file_id}.{file_ext}"
+        file_path = upload_dir / filename
+        
+        with open(file_path, 'wb') as f:
+            f.write(contents)
+        
+        # Generate URL
+        image_url = f"{BACKEND_URL}/api/images/serve/{filename}"
         
         return {
             "success": True,
-            "image_url": result['secure_url'],
-            "cloudinary_id": result['public_id']
+            "image_url": image_url,
+            "cloudinary_id": file_id
         }
     except Exception as e:
         logger.error(f"Error uploading image: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/images/serve/{filename}")
+async def serve_image(filename: str):
+    """Serve uploaded images"""
+    try:
+        file_path = Path(f"/app/backend/uploads/{filename}")
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail="Image not found")
+        
+        from fastapi.responses import FileResponse
+        return FileResponse(file_path)
+    except Exception as e:
+        logger.error(f"Error serving image: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/images/analyze")
