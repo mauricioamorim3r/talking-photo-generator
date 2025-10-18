@@ -198,6 +198,10 @@ async def analyze_image(request: AnalyzeImageRequest):
 
 **IMPORTANTE**: Para Veo 3 e Sora 2, use o Prompt Cinematográfico Completo abaixo. Para outros modelos, use versão simplificada.
 
+**ATENÇÃO - POLÍTICA DE CONTEÚDO:**
+EVITE palavras que podem violar políticas: ameaçador(a), violento(a), ataque, sangue, armas, terror, pânico.
+USE palavras neutras: impressionante, surpreendente, dramático, intenso, admirável, reação.
+
 **O PROMPT CINEMATOGRÁFICO PERFEITO (Veo 3 e Sora 2):**
 
 1. **Assunto Principal e Ação**
