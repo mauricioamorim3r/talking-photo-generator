@@ -110,11 +110,11 @@ class VideoGenAPITester:
             return False, {}
 
     def test_image_analysis(self, image_url):
-        """Test Gemini image analysis with timeout handling"""
-        print(f"\n🔍 Testing Gemini Image Analysis (30s timeout)...")
+        """Test Gemini image analysis with model-specific prompt generation"""
+        print(f"\n🔍 Testing Model-Specific Prompt Generation (30s timeout)...")
         
         success, response = self.run_test(
-            "Gemini Image Analysis", 
+            "Gemini Image Analysis - Model-Specific Prompts", 
             "POST", 
             "images/analyze", 
             200, 
@@ -130,6 +130,13 @@ class VideoGenAPITester:
                 print(f"      - Subject Type: {analysis.get('subject_type', 'N/A')}")
                 print(f"      - Premium Model: {analysis.get('recommended_model_premium', 'N/A')}")
                 print(f"      - Economic Model: {analysis.get('recommended_model_economico', 'N/A')}")
+                
+                # Test new JSON structure
+                self.test_prompt_structure(analysis)
+                
+                # Test prompt content and sanitization
+                self.test_prompt_sanitization(analysis)
+                
                 return True, response
             else:
                 print(f"   ⚠️ Analysis returned but no analysis data")
@@ -137,6 +144,159 @@ class VideoGenAPITester:
         else:
             print(f"   ❌ Analysis failed")
             return False, {}
+
+    def test_prompt_structure(self, analysis):
+        """Test that the new JSON structure is correct"""
+        print(f"\n🔍 Testing JSON Structure...")
+        
+        required_fields = [
+            'prompt_sora2', 'prompt_veo3', 'prompt_economico', 
+            'cinematic_details', 'recommended_model_premium', 
+            'recommended_model_economico'
+        ]
+        
+        missing_fields = []
+        for field in required_fields:
+            if field not in analysis:
+                missing_fields.append(field)
+        
+        if missing_fields:
+            self.log_test("JSON Structure - Required Fields", False, 
+                         error=f"Missing fields: {missing_fields}")
+            return False
+        else:
+            self.log_test("JSON Structure - Required Fields", True, 
+                         "All required fields present")
+        
+        # Test cinematic_details structure
+        cinematic = analysis.get('cinematic_details', {})
+        required_cinematic_fields = [
+            'subject_action', 'camera_work', 'lighting', 
+            'audio_design', 'style'
+        ]
+        
+        missing_cinematic = []
+        for field in required_cinematic_fields:
+            if field not in cinematic:
+                missing_cinematic.append(field)
+        
+        if missing_cinematic:
+            self.log_test("Cinematic Details Structure", False, 
+                         error=f"Missing cinematic fields: {missing_cinematic}")
+            return False
+        else:
+            self.log_test("Cinematic Details Structure", True, 
+                         "All cinematic detail fields present")
+        
+        # Test that Sora 2 and Veo 3 prompts are different
+        sora2_prompt = analysis.get('prompt_sora2', '')
+        veo3_prompt = analysis.get('prompt_veo3', '')
+        
+        if sora2_prompt == veo3_prompt:
+            self.log_test("Model-Specific Prompts", False, 
+                         error="Sora 2 and Veo 3 prompts are identical")
+            return False
+        elif len(sora2_prompt) > 50 and len(veo3_prompt) > 50:
+            self.log_test("Model-Specific Prompts", True, 
+                         "Sora 2 and Veo 3 prompts are different and substantial")
+            print(f"      - Sora 2 prompt length: {len(sora2_prompt)} chars")
+            print(f"      - Veo 3 prompt length: {len(veo3_prompt)} chars")
+        else:
+            self.log_test("Model-Specific Prompts", False, 
+                         error="Prompts are too short or empty")
+            return False
+        
+        return True
+
+    def test_prompt_sanitization(self, analysis):
+        """Test that prompts are properly sanitized"""
+        print(f"\n🔍 Testing Prompt Sanitization...")
+        
+        # Facial fidelity terms that should NOT appear
+        forbidden_facial_terms = [
+            'identidade facial', 'fidelidade facial', 'preservar', 
+            '100%', 'características originais', 'manter identidade',
+            'preservando 100%', 'alta fidelidade', 'expressões faciais devem ser preservadas'
+        ]
+        
+        # Violent/threatening terms that should NOT appear
+        forbidden_violent_terms = [
+            'ameaçador', 'violento', 'ataque', 'sangue', 'armas', 
+            'terror', 'pânico', 'agressivo', 'afiado'
+        ]
+        
+        all_prompts = {
+            'prompt_sora2': analysis.get('prompt_sora2', ''),
+            'prompt_veo3': analysis.get('prompt_veo3', ''),
+            'prompt_economico': analysis.get('prompt_economico', ''),
+        }
+        
+        # Add cinematic details to check
+        cinematic = analysis.get('cinematic_details', {})
+        for key, value in cinematic.items():
+            if isinstance(value, str):
+                all_prompts[f'cinematic_{key}'] = value
+        
+        facial_violations = []
+        violent_violations = []
+        
+        for prompt_name, prompt_text in all_prompts.items():
+            if not prompt_text:
+                continue
+                
+            prompt_lower = prompt_text.lower()
+            
+            # Check for facial fidelity violations
+            for term in forbidden_facial_terms:
+                if term.lower() in prompt_lower:
+                    facial_violations.append(f"{prompt_name}: '{term}'")
+            
+            # Check for violent term violations
+            for term in forbidden_violent_terms:
+                if term.lower() in prompt_lower:
+                    violent_violations.append(f"{prompt_name}: '{term}'")
+        
+        # Report facial fidelity violations (CRITICAL)
+        if facial_violations:
+            self.log_test("Facial Fidelity Sanitization", False, 
+                         error=f"CRITICAL: Facial fidelity terms found: {facial_violations}")
+            print(f"   🚨 CRITICAL VIOLATION: Facial fidelity terms detected!")
+            for violation in facial_violations:
+                print(f"      - {violation}")
+            return False
+        else:
+            self.log_test("Facial Fidelity Sanitization", True, 
+                         "No facial fidelity terms found")
+        
+        # Report violent term violations
+        if violent_violations:
+            self.log_test("Violent Terms Sanitization", False, 
+                         error=f"Violent terms found: {violent_violations}")
+            print(f"   ⚠️ Violent terms detected:")
+            for violation in violent_violations:
+                print(f"      - {violation}")
+            return False
+        else:
+            self.log_test("Violent Terms Sanitization", True, 
+                         "No violent terms found")
+        
+        # Test that prompts contain expected positive terms
+        positive_terms = ['cinematográfico', 'natural', 'suave', 'impressionante', 'dramático']
+        has_positive = False
+        
+        for prompt_text in all_prompts.values():
+            if any(term in prompt_text.lower() for term in positive_terms):
+                has_positive = True
+                break
+        
+        if has_positive:
+            self.log_test("Positive Terms Present", True, 
+                         "Prompts contain appropriate positive descriptive terms")
+        else:
+            self.log_test("Positive Terms Present", False, 
+                         error="Prompts lack positive descriptive terms")
+        
+        return not facial_violations and not violent_violations
 
     def test_voices_endpoint(self):
         """Test ElevenLabs voices endpoint"""
