@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Upload, Camera, Sparkles, Video, Mic, Loader2, Download, DollarSign, Play, Wand2, AlertCircle, Crown, Zap } from 'lucide-react';
+import { Upload, Camera, Sparkles, Video, Mic, Loader2, Download, DollarSign, Play, Wand2, AlertCircle, Crown, Zap, Grid } from 'lucide-react';
 import axios from 'axios';
 import Webcam from 'react-webcam';
 import { Button } from '../components/ui/button';
