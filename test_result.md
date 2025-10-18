@@ -194,10 +194,15 @@ backend:
           - Cost: $0.50
           - Video ID: 762c89a9-ce6b-4c21-b4ac-e83093b5f212
           
-          ✅ Veo 3 Configuration Fixed:
-          - Fixed duration parameter: Veo 3 requires "8s" string format (not integer)
-          - Backend updated to handle Veo 3 duration correctly
-          - Veo 3 test in progress (longer processing time expected)
+          ✅ Veo 3 Video Generation:
+          - Model: veo3, Mode: premium
+          - Test image: https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400 (cat)
+          - Prompt: "Cat turning head slowly, cinematic close-up, soft lighting."
+          - Duration: Fixed to "8s" format (Veo 3 requirement)
+          - RESULT: SUCCESS ✅
+          - Generated video URL: https://v3b.fal.media/files/b/tiger/WxY6KGRiHI15neYKsmmcR_output.mp4
+          - Cost: $1.00
+          - Video ID: 579ed7da-3840-4959-9622-f7c19ae29e4d
           
           ✅ Backend Integration:
           - /api/video/generate endpoint working correctly
