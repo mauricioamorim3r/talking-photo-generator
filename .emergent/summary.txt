@@ -1,0 +1,53 @@
+<analysis>
+The AI engineer successfully built a full-stack application for video and audio generation from images. Key features include image upload, AI analysis (Gemini) for model suggestion and cinematographic prompt generation, selection of video models (Veo 3, Sora 2, Wav2Lip from Fal.ai and HuggingFace), audio generation (ElevenLabs), and an admin panel for API usage and balance management. The AI also implemented a gallery for generated content. Significant effort was spent debugging UI rendering issues, Cloudinary integration, and persistent content policy violations from Fal.ai related to facial fidelity in prompts. The AI introduced robust prompt sanitization and clear UI feedback. The current task revolves around integrating refined, model-specific prompt templates from Fal.ai documentation while ensuring strict adherence to content policies, particularly regarding facial manipulation instructions.
+</analysis>
+
+<product_requirements>
+The user requested an application to generate videos with synchronized audio from uploaded or captured images of people, animals, or objects. The app should use Gemini for image analysis and model suggestion. Video generation models include Veo 3, Sora 2, and Wav2Lip (via Fal.ai and HuggingFace). ElevenLabs is used for audio generation with specific controls (Brazilian Portuguese accent, child voices, speed/timbre). An admin panel (password mauricio123) must display API token usage, costs, and remaining balance, with an option to manage balances. Generated videos and items should be saved locally and viewable/manageable in a gallery. A key requirement is a cinematographic prompt system, editable by the user, with AI suggestions. Latest revisions focus on model-specific prompt structures and free model options, emphasizing compliance with API content policies, particularly regarding facial fidelity.
+</product_requirements>
+
+<key_technical_concepts>
+- Full-stack application: FastAPI (backend), React (frontend), MongoDB (database).
+- AI/ML Integrations: Google Gemini (image analysis, prompt generation), Fal.ai (Veo 3, Sora 2, Wav2Lip for video/lip-sync), ElevenLabs (text-to-speech), HuggingFace Inference API (free models).
+- Image Handling: Cloudinary (upload), local storage (fallback).
+- UI/UX: Shadcn UI, Tailwind CSS, Sonner (toasts), Framer Motion (animations).
+- Asynchronous Programming: Python's  for non-blocking operations.
+- Data Validation: Pydantic models for API request/response.
+</key_technical_concepts>
+
+<code_architecture>
+
+- **/app/backend/server.py**: Main FastAPI application. Configures database, API keys, and defines all backend logic:
+    -   **Models**: Pydantic models for , , , , etc.
+    -   **Endpoints**:  (Cloudinary integration, with local fallback for testing),  (Gemini integration with timeout and robust error handling, generates cinematographic prompts), , , ,  (integrates Fal.ai for Veo 3, Sora 2, Wav2Lip, and Gradio Client for HuggingFace models), , , , , .
+    -   **Prompt Sanitization**: Includes  function to remove terms violating Fal.ai's content policy.
+    -   **Changes**: Updated multiple times to refine Gemini prompts, implement timeout, add Cloudinary API keys, fix Fal.ai async issues, and enhance prompt sanitization logic.
+
+- **/app/frontend/src/App.js**: Sets up React Router for , , and  routes.
+- **/app/frontend/src/index.js**: Entry point, now includes  from .
+- **/app/frontend/src/pages/HomePage.jsx**: User interface for the core functionality.
+    -   **Functionality**: Image upload (webcam/file), AI analysis, model selection (Premium/Econômico), prompt display and editing, audio/video generation. Displays generated video and suggestions.
+    -   **Changes**: Refactored / hooks, integrated new API calls, added model selectors, re-analysis button, and dynamically displays audio generation options based on selected model.
+- **/app/frontend/src/pages/AdminPanel.jsx**: Password-protected (password mauricio123) UI.
+    -   **Functionality**: Displays API usage statistics (total spent, remaining tokens/balance) and allows editing of initial balances.
+    -   **Changes**: Added UI components to fetch and display API balances and enable editing.
+- **/app/frontend/src/pages/GalleryPage.jsx**: Displays a collection of generated videos with options to delete.
+- **/app/frontend/src/components/ui/**: Directory containing Shadcn UI components used throughout the frontend for a consistent and modern look.
+- **/app/frontend/.env**: Stores  and Cloudinary keys.
+</code_architecture>
+
+<pending_tasks>
+- Integrate the detailed, model-specific prompt templates for Sora 2 and Veo 3 provided by the user (Chat Message 481) into the Gemini analysis logic, ensuring that all aspects of the prompts are used while strictly adhering to Fal.ai's content policies, possibly through refined filtering.
+</pending_tasks>
+
+<current_work>
+The AI engineer was most recently focused on resolving persistent  errors from FAL.AI during video generation, which were caused by content policy violations related to facial fidelity instructions in the AI-generated prompts.
+
+After several iterations of debugging and improving prompt sanitization, including a SUPER agressivo filter in  to remove any phrases related to fidelidade, facial, preservação and similar terms, the system was considered robust. Additionally, the frontend () was updated to correctly reflect which models (Sora 2, Veo 3) generate native audio and which (Wav2lip) require separate audio.
+
+Immediately before this summary, the user provided new, comprehensive prompt templates for Sora 2 and Veo 3, derived from Fal.ai's documentation (Chat Message 481). The AI engineer identified that these new templates still contained phrases that historically triggered content policy violations (e.g., preservar 100% da identidade facial). The AI engineer acknowledged this, and the last message indicates readiness to implement these new structures while addressing the identified content policy conflicts.
+</current_work>
+
+<optional_next_step>
+Implement the revised Sora 2 and Veo 3 prompt templates provided by the user (Message 481), ensuring compliance with FAL.AI content policies.
+</optional_next_step>
