@@ -549,7 +549,7 @@ const HomePage = () => {
                     </div>
 
                     {/* Cinematic Prompt Section */}
-                    {analysis && analysis.cinematic_prompt && (
+                    {analysis && analysis.cinematic_details && (
                       <div className="cinematic-section">
                         <Button
                           variant="outline"
@@ -566,43 +566,25 @@ const HomePage = () => {
                             <h5>Elementos Cinematográficos:</h5>
                             
                             <div className="cinematic-item">
-                              <strong>Assunto e Ação:</strong> {analysis.cinematic_prompt.subject_action}
-                            </div>
-                            
-                            {analysis.cinematic_prompt.facial_fidelity && (
-                              <div className="cinematic-item critical">
-                                <strong>⚠️ Fidelidade Facial (Crítico):</strong> {analysis.cinematic_prompt.facial_fidelity}
-                              </div>
-                            )}
-                            
-                            <div className="cinematic-item">
-                              <strong>Tipo de Plano:</strong> {analysis.cinematic_prompt.camera_shot}
+                              <strong>Assunto e Ação:</strong> {analysis.cinematic_details.subject_action}
                             </div>
                             
                             <div className="cinematic-item">
-                              <strong>Movimento:</strong> {analysis.cinematic_prompt.camera_movement}
+                              <strong>Enquadramento:</strong> {analysis.cinematic_details.camera_work}
                             </div>
                             
                             <div className="cinematic-item">
-                              <strong>Iluminação:</strong> {analysis.cinematic_prompt.lighting}
+                              <strong>Iluminação:</strong> {analysis.cinematic_details.lighting}
                             </div>
                             
-                            <div className="cinematic-item">
-                              <strong>Lente:</strong> {analysis.cinematic_prompt.lens}
-                            </div>
-                            
-                            <div className="cinematic-item">
-                              <strong>Estilo de Cor:</strong> {analysis.cinematic_prompt.color_style}
-                            </div>
-                            
-                            {analysis.cinematic_prompt.audio_instruction && (selectedModel === 'veo3' || selectedModel === 'sora2') && (
+                            {analysis.cinematic_details.audio_design && (selectedModel === 'veo3' || selectedModel === 'sora2') && (
                               <div className="cinematic-item audio">
-                                <strong>🎵 Instrução de Áudio:</strong> {analysis.cinematic_prompt.audio_instruction}
+                                <strong>🎵 Design de Áudio:</strong> {analysis.cinematic_details.audio_design}
                               </div>
                             )}
                             
                             <div className="cinematic-item">
-                              <strong>Qualidade:</strong> {analysis.cinematic_prompt.quality}
+                              <strong>Estilo Visual:</strong> {analysis.cinematic_details.style}
                             </div>
                             
                             <Button 
