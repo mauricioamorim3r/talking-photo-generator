@@ -221,6 +221,14 @@ Os modelos JÁ mantêm a imagem original automaticamente. Descreva apenas a AÇ�
 ❌ ameaçador, violento, ataque, sangue, armas, terror, pânico, agressivo, afiado
 ✅ USE ESTAS: impressionante, dramático, majestoso, intenso, impactante, surpreendente, admirável
 
+**⚠️ CONTEÚDO SENSÍVEL COM CRIANÇAS:**
+Quando a imagem contiver CRIANÇAS (menores de 18 anos):
+- EVITE descrições de ações relacionadas a comida/bebida na boca
+- EVITE close-ups extremos do rosto
+- USE descrições gerais e neutras: "criança sorrindo", "brincando", "correndo"
+- FOQUE em ações seguras: brincar, correr, sorrir, acenar
+- NÃO descreva detalhes faciais em excesso
+
 ---
 
 ## 📽️ TEMPLATE ESPECÍFICO PARA SORA 2
