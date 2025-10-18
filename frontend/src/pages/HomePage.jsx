@@ -525,27 +525,47 @@ const HomePage = () => {
                         {showCinematicPrompt && (
                           <div className="cinematic-prompts" data-testid="cinematic-prompts">
                             <h5>Elementos Cinematográficos:</h5>
+                            
                             <div className="cinematic-item">
                               <strong>Assunto e Ação:</strong> {analysis.cinematic_prompt.subject_action}
                             </div>
+                            
+                            {analysis.cinematic_prompt.facial_fidelity && (
+                              <div className="cinematic-item critical">
+                                <strong>⚠️ Fidelidade Facial (Crítico):</strong> {analysis.cinematic_prompt.facial_fidelity}
+                              </div>
+                            )}
+                            
                             <div className="cinematic-item">
                               <strong>Tipo de Plano:</strong> {analysis.cinematic_prompt.camera_shot}
                             </div>
+                            
                             <div className="cinematic-item">
                               <strong>Movimento:</strong> {analysis.cinematic_prompt.camera_movement}
                             </div>
+                            
                             <div className="cinematic-item">
                               <strong>Iluminação:</strong> {analysis.cinematic_prompt.lighting}
                             </div>
+                            
                             <div className="cinematic-item">
                               <strong>Lente:</strong> {analysis.cinematic_prompt.lens}
                             </div>
+                            
                             <div className="cinematic-item">
                               <strong>Estilo de Cor:</strong> {analysis.cinematic_prompt.color_style}
                             </div>
+                            
+                            {analysis.cinematic_prompt.audio_instruction && (selectedModel === 'veo3' || selectedModel === 'sora2') && (
+                              <div className="cinematic-item audio">
+                                <strong>🎵 Instrução de Áudio:</strong> {analysis.cinematic_prompt.audio_instruction}
+                              </div>
+                            )}
+                            
                             <div className="cinematic-item">
                               <strong>Qualidade:</strong> {analysis.cinematic_prompt.quality}
                             </div>
+                            
                             <Button 
                               size="sm" 
                               onClick={applyCinematicPrompt}
