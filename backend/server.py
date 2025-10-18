@@ -34,6 +34,9 @@ os.environ['FAL_KEY'] = fal_key
 
 elevenlabs_client = ElevenLabs(api_key=os.environ.get('ELEVENLABS_KEY', ''))
 
+# Backend URL for serving images
+BACKEND_URL = os.environ.get('BACKEND_URL', 'http://localhost:8001')
+
 cloudinary.config(
     cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
     api_key=os.environ.get('CLOUDINARY_API_KEY', ''),
