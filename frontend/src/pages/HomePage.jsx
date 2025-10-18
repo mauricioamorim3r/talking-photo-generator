@@ -251,14 +251,24 @@ const HomePage = () => {
             <Video className="logo-icon" />
             <h1>VideoMagic AI</h1>
           </motion.div>
-          <Button 
-            variant="outline" 
-            onClick={() => window.location.href = '/admin'}
-            data-testid="admin-button"
-          >
-            <DollarSign className="w-4 h-4 mr-2" />
-            Painel Admin
-          </Button>
+          <div className="header-buttons">
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = '/gallery'}
+              data-testid="gallery-button"
+            >
+              <Grid className="w-4 h-4 mr-2" />
+              Galeria
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = '/admin'}
+              data-testid="admin-button"
+            >
+              <DollarSign className="w-4 h-4 mr-2" />
+              Admin
+            </Button>
+          </div>
         </div>
       </header>
 
