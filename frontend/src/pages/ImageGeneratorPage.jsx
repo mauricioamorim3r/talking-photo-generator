@@ -11,47 +11,108 @@ import './ImageGeneratorPage.css';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
 
 const PROMPT_LIBRARY = {
-  realistic: [
-    {
-      title: "Figura Realista 3D",
-      prompt: "Create a 1/7 scale hyper-realistic figure of a character, standing on a round transparent acrylic base on a computer desk, with a premium collector's toy box next to it. Studio lighting, 4K quality."
-    },
-    {
-      title: "Produto Comercial",
-      prompt: "Professional product photography of a luxury item on a clean white background, studio lighting with soft shadows, 8K ultra-detailed, commercial advertising quality."
-    },
-    {
-      title: "Retrato Fotorrealista",
-      prompt: "Photorealistic portrait of a person with cinematic lighting, shallow depth of field, bokeh background, shot with 85mm f/1.4 lens, professional fashion photography style."
-    }
+  avatares: [
+    { title: "Retrato em Pixel Art", prompt: "Transforme este retrato em um avatar de videogame de 16-bits, estilo pixel art, com uma caixa de diálogo abaixo." },
+    { title: "Viagem no Tempo Anos 80", prompt: "Recrie esta foto como se tivesse sido tirada nos anos 80, com estética de filme Kodachrome, roupas e cabelo da época." },
+    { title: "Terapia Criança Interior", prompt: "Crie uma cena onde eu (adulto) estou abraçando carinhosamente minha versão de 8 anos. Estilo fotografia emocional, com luz suave." },
+    { title: "Companheiro Assustador", prompt: "Adicione ao meu lado um pequeno monstro amigável, no estilo dos filmes de Tim Burton." },
+    { title: "Retrato a Lápis", prompt: "Recrie este retrato como um desenho a lápis de grafite hiper-realista em um caderno de esboços." },
+    { title: "Retrato em Aquarela", prompt: "Transforme este retrato em uma pintura de aquarela, com pinceladas visíveis e cores suaves." },
+    { title: "Transformar em Sticker", prompt: "Transforme-me em um sticker (adesivo) de vinil, com um contorno branco grosso e acabamento brilhante. Fundo transparente." },
+    { title: "Avatar Funko Pop", prompt: "Transforme-me em um boneco colecionável Funko Pop, com olhos grandes e redondos, dentro de uma caixa personalizada." },
+    { title: "Foto LinkedIn Profissional", prompt: "Transforme esta imagem em um headshot corporativo profissional, com fundo de escritório desfocado e iluminação de estúdio." },
+    { title: "Capa de Revista Vogue", prompt: "Transforme este retrato na capa de uma revista de moda como a Vogue, com título, manchetes e pose de alta costura." },
+    { title: "Retrato Histórico Vitoriano", prompt: "Recrie meu retrato como se eu fosse uma figura da nobreza vitoriana, com traje e penteado da época." },
+    { title: "Silhueta Dramática", prompt: "Crie uma silhueta minha contra um pôr do sol dramático, com o contorno bem definido." },
+    { title: "Caricatura Divertida", prompt: "Transforme este retrato em uma caricatura divertida, exagerando características marcantes com estilo de desenho cômico." },
+    { title: "Retrato Claymation", prompt: "Transforme meu retrato em um boneco de argila (claymation), no estilo do estúdio Aardman." }
   ],
-  anime: [
-    {
-      title: "Personagem Anime",
-      prompt: "Anime style character illustration, vibrant colors, clean linework, detailed eyes, cel-shaded rendering, professional manga art quality."
-    },
-    {
-      title: "Cena de Fantasia Anime",
-      prompt: "Fantasy anime scene with magical elements, dramatic lighting, detailed background with floating particles, Studio Ghibli inspired art style."
-    },
-    {
-      title: "Chibi Kawaii",
-      prompt: "Cute chibi character in kawaii style, pastel colors, big eyes, simple background with sparkles and hearts, adorable expression."
-    }
+  
+  estilos: [
+    { title: "Efeito Pop Art Warhol", prompt: "Aplique um efeito de Pop Art a este retrato, no estilo de Andy Warhol, com cores vibrantes e contrastantes." },
+    { title: "Mosaico de Azulejos", prompt: "Transforme esta imagem em um mosaico de azulejos coloridos, mantendo a forma principal reconhecível." },
+    { title: "Dupla Exposição", prompt: "Crie um efeito de dupla exposição, mesclando meu retrato com uma paisagem de montanhas." },
+    { title: "Pôster Minimalista", prompt: "Transforme esta imagem em um pôster de filme minimalista, usando apenas formas geométricas e 3 cores." },
+    { title: "Efeito Steampunk", prompt: "Adicione elementos steampunk a este retrato: engrenagens, óculos de aviador, detalhes em cobre e latão." },
+    { title: "Arte Ukiyo-e Japonesa", prompt: "Recrie esta cena no estilo de uma gravura japonesa Ukiyo-e, com traços de xilogravura e cores chapadas." },
+    { title: "Videogame Retrô", prompt: "Transforme esta cena em um videogame de aventura dos anos 90, com gráficos pixelados (pixel art)." },
+    { title: "Painel de Quadrinhos", prompt: "Transforme esta imagem em um painel de história em quadrinhos, com contornos pretos e balões de diálogo." },
+    { title: "Arte com Colagem", prompt: "Crie uma colagem digital usando este retrato, misturado com recortes de jornais e elementos botânicos." },
+    { title: "Arte de Linha Minimalista", prompt: "Extraia as linhas principais e transforme em line art minimalista, com um único traço contínuo." },
+    { title: "Pintura Impressionista Monet", prompt: "Transforme esta paisagem em pintura impressionista, estilo Monet, com pinceladas curtas visíveis." },
+    { title: "Arte Cubista Picasso", prompt: "Desconstrua este retrato em formas geométricas e múltiplos pontos de vista, estilo cubismo de Picasso." },
+    { title: "Vitral de Igreja Gótica", prompt: "Transforme esta imagem em um vitral de igreja gótica, com contornos de chumbo e vidro colorido translúcido." }
   ],
-  editing: [
-    {
-      title: "Remover Fundo",
-      prompt: "Remove the background and make this look like a professional studio product shot with clean white background."
-    },
-    {
-      title: "Melhorar Qualidade",
-      prompt: "Enhance image quality, improve details and sharpness, fix lighting and colors, maintain original style and composition."
-    },
-    {
-      title: "Estilo Artístico",
-      prompt: "Transform this image into an artistic painting style with vibrant colors, painterly brushstrokes, and enhanced creative interpretation."
-    }
+  
+  design: [
+    { title: "Design de Camiseta", prompt: "Crie uma estampa para camiseta com design minimalista e gráfico. A estampa deve ser centralizada, fundo transparente." },
+    { title: "Capa de Álbum Musical", prompt: "Crie a capa de um álbum de música com estilo visual psicodélico dos anos 70, cores vibrantes." },
+    { title: "Logotipo Moderno", prompt: "Crie 5 opções de logotipo moderno, minimalista e elegante para uma marca." },
+    { title: "Ícone de Aplicativo", prompt: "Desenvolva um ícone de aplicativo simples, reconhecível e funcional em tamanhos pequenos." },
+    { title: "Design de Embalagem Luxuosa", prompt: "Crie design de embalagem para produto gourmet. Estilo luxuoso e minimalista." },
+    { title: "Food Photography", prompt: "Fotografia profissional de hambúrguer artesanal em fundo de madeira rústica, iluminação de estúdio. Estilo food porn." },
+    { title: "Cartão de Visitas", prompt: "Crie design de cartão de visitas clean e profissional, com espaços para informações de contato." },
+    { title: "Design de Tatuagem Blackwork", prompt: "Crie um design de tatuagem em estilo blackwork com traços claros, para ser usado como referência." },
+    { title: "Emoji Personalizado iOS", prompt: "Crie um emoji personalizado no estilo dos emojis padrão do iOS, com contornos suaves e cores vibrantes." },
+    { title: "Ícones para Infográfico", prompt: "Crie um conjunto de 5 ícones vetoriais em estilo flat design para infográfico." },
+    { title: "Mascote Estilo Pixar", prompt: "Crie um mascote amigável e carismático, no estilo de ilustração 3D da Pixar." },
+    { title: "Thumbnail YouTube", prompt: "Crie uma thumbnail com alto contraste, cores chamativas e elemento de curiosidade para vídeo do YouTube." }
+  ],
+  
+  manipulacao: [
+    { title: "Colorir Foto P&B", prompt: "Colorize esta foto em preto e branco com cores realistas e historicamente apropriadas." },
+    { title: "Remover Objeto", prompt: "Remova o objeto selecionado desta imagem e reconstrua o fundo de forma natural." },
+    { title: "Mudar Fundo - Praia", prompt: "Mantenha a pessoa intacta, mas troque o fundo por uma praia ao pôr do sol." },
+    { title: "Restaurar Foto Antiga", prompt: "Restaure esta foto antiga e danificada, removendo rasgos, manchas e corrigindo cores desbotadas." },
+    { title: "Estender Imagem (Outpainting)", prompt: "Expanda as bordas desta imagem, completando o cenário de forma realista em todas as direções." },
+    { title: "Adicionar Textura de Papel", prompt: "Aplique uma textura de papel amassado sobre esta imagem, com modo de mesclagem overlay." },
+    { title: "Mudar Cor dos Olhos", prompt: "Mantenha todo o resto, mas mude a cor dos olhos da pessoa para azul safira." },
+    { title: "Mudar Cor do Cabelo", prompt: "Mantenha todo o resto, mas mude a cor do cabelo da pessoa para loiro platinado." },
+    { title: "Criar Reflexo na Água", prompt: "Adicione um reflexo realista desta cena em uma superfície de água calma abaixo dela." },
+    { title: "Filtro Cinematográfico", prompt: "Aplique um filtro de gradação de cor cinematográfico, com o estilo teal and orange." },
+    { title: "Corrigir Foto Borrada", prompt: "Melhore a nitidez e corrija o leve desfoque de movimento nesta imagem." },
+    { title: "Mudar para Golden Hour", prompt: "Altere a iluminação desta cena de luz do meio-dia para luz do fim da tarde (golden hour)." },
+    { title: "Progressão de Idade", prompt: "Recrie esta imagem, mas me mostre como eu serei com 60 anos de idade." }
+  ],
+  
+  mundos: [
+    { title: "Cenário Cyberpunk Noturno", prompt: "Crie paisagem urbana cyberpunk à noite, com chuva, arranha-céus gigantes, carros voadores e letreiros de neon." },
+    { title: "Paisagem de Fantasia", prompt: "Crie paisagem de reino de fantasia, com castelos flutuantes, cachoeiras que desafiam gravidade e duas luas no céu." },
+    { title: "Roma Antiga Fotorrealista", prompt: "Recrie a cidade de Roma Antiga no seu auge, em 3D fotorrealista, baseado em reconstruções históricas." },
+    { title: "Design de Interiores Escandinavo", prompt: "Crie mockup de sala de estar no estilo escandinavo, com móveis e decoração minimalista." },
+    { title: "Paisagem Surrealista Dalí", prompt: "Crie paisagem de sonho no estilo de Salvador Dalí, com relógios derretendo em uma praia deserta." },
+    { title: "Mundo em Miniatura Tilt-Shift", prompt: "Fotografia de cidade movimentada com efeito tilt-shift, fazendo tudo parecer um mundo em miniatura." },
+    { title: "Comida como Paisagem", prompt: "Crie paisagem onde montanhas são de pão, rios de chocolate e árvores de brócolis." },
+    { title: "Planeta Alienígena", prompt: "Crie paisagem de planeta alienígena, com flora bioluminescente, céu roxo e formações rochosas exóticas." },
+    { title: "Nova York Pós-Apocalíptica", prompt: "Crie cenário de Nova York pós-apocalíptica, com natureza retomando prédios abandonados em ruínas." },
+    { title: "Mapa de Tesouro Pirata", prompt: "Desenhe mapa de tesouro pirata em estilo de pergaminho antigo, com ilustrações e caligrafia." },
+    { title: "Cidade Subaquática", prompt: "Crie imagem de cidade futurista subaquática, dentro de cúpula de vidro, com peixes e baleias nadando ao redor." },
+    { title: "Paisagem National Geographic", prompt: "Fotografia de paisagem das montanhas da Suíça, com qualidade da National Geographic." }
+  ],
+  
+  criativo: [
+    { title: "Pet como Personagem Disney", prompt: "Transforme este animal em um personagem no estilo clássico de animação 2D da Disney." },
+    { title: "Fusão de Dois Animais", prompt: "Crie uma nova criatura híbrida que seja fusão de um leão com uma águia (grifo)." },
+    { title: "Criatura Mítica Realista", prompt: "Crie sua versão de um dragão, com estilo de arte realista e sombrio." },
+    { title: "Carro como Transformer", prompt: "Transforme este carro em um robô Transformer em meio a uma batalha épica." },
+    { title: "Objeto em Porcelana Delft", prompt: "Crie um headphone como se fosse feito de porcelana branca com detalhes em pintura azul, estilo cerâmica de Delft." },
+    { title: "Híbrido Humano-Raposa", prompt: "Crie retrato de pessoa com características sutis de raposa, com orelhas e cauda, estilo fantasia realista." },
+    { title: "Capa da Invisibilidade", prompt: "Aplique efeito de capa da invisibilidade, deixando apenas contorno translúcido e distorcendo o fundo." },
+    { title: "Gravidade Invertida", prompt: "Crie cena em sala onde gravidade está invertida, com pessoas e objetos flutuando em direção ao teto." },
+    { title: "Pizza como Planeta", prompt: "Transforme esta pizza em um planeta flutuando no espaço, com naves de manjericão e luas de azeitona." },
+    { title: "Golem de Pedra Viva", prompt: "Crie imagem de golem feito de pedras de rio, caminhando por uma floresta mística." },
+    { title: "Mundo de Origami", prompt: "Recrie esta cena como se tudo fosse feito de dobraduras de papel (origami)." },
+    { title: "Esculturas de Nuvens", prompt: "Crie imagem de nuvens no céu que tenham forma de animais e objetos reconhecíveis." },
+    { title: "Inseto Mecânico Steampunk", prompt: "Crie uma abelha como organismo mecânico, com engrenagens e peças de metal, estilo steampunk." },
+    { title: "Violão como Prédio", prompt: "Transforme este violão em prédio de arquitetura futurista, mantendo suas formas e características." }
+  ],
+  
+  brasileiro: [
+    { title: "Retrato no Pelourinho", prompt: "Retrato de mulher baiana com turbante e colares, em frente às casas coloridas do Pelourinho, Salvador. Estilo fotografia documental, cores vibrantes." },
+    { title: "Capoeira no Rio", prompt: "Cena de roda de capoeira na praia de Ipanema ao pôr do sol, com Morro Dois Irmãos ao fundo. Captura de movimento, silhuetas dinâmicas." },
+    { title: "Releitura Tarsila do Amaral", prompt: "Recrie este retrato no estilo da obra Abaporu de Tarsila do Amaral, mantendo cores e formas do modernismo brasileiro." },
+    { title: "Festa Junina", prompt: "Cena de festa junina à noite, com bandeirinhas coloridas, fogueira grande e pessoas dançando quadrilha. Estilo pintura naïf." },
+    { title: "Saci Pererê Moderno", prompt: "Crie representação realista e moderna do Saci Pererê, em floresta densa e misteriosa da Mata Atlântica." }
   ]
 };
 
