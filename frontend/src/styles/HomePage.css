@@ -22,6 +22,11 @@
   align-items: center;
 }
 
+.header-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
 .logo {
   display: flex;
   align-items: center;
