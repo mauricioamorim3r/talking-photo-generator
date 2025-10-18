@@ -21,6 +21,7 @@ const HomePage = () => {
   const [imageUrl, setImageUrl] = useState('');
   const [analysis, setAnalysis] = useState(null);
   const [selectedModel, setSelectedModel] = useState('');
+  const [selectedMode, setSelectedMode] = useState('premium'); // premium or economico
   const [prompt, setPrompt] = useState('');
   const [audioUrl, setAudioUrl] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
@@ -28,6 +29,7 @@ const HomePage = () => {
   const [showWebcam, setShowWebcam] = useState(false);
   const [estimatedCost, setEstimatedCost] = useState(0);
   const [actualCost, setActualCost] = useState(0);
+  const [showCinematicPrompt, setShowCinematicPrompt] = useState(false);
   
   // Audio generation states
   const [audioText, setAudioText] = useState('');
