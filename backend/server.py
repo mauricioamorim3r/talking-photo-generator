@@ -2,7 +2,6 @@ from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse, FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
@@ -12,21 +11,17 @@ import uuid
 from datetime import datetime, timezone
 import fal_client
 from elevenlabs import ElevenLabs
-from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContentWithMimeType
+from emergent_wrapper import LlmChat, UserMessage, FileContentWithMimeType
 import cloudinary
 import cloudinary.uploader
 import base64
 import io
 from PIL import Image
 from gradio_client import Client
+from database import db as database
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
-
-# MongoDB connection
-mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ.get('DB_NAME', 'video_gen_database')]
 
 # Configure APIs
 fal_key = os.environ.get('FAL_KEY', '')
@@ -193,17 +188,19 @@ async def analyze_image(request: AnalyzeImageRequest):
     try:
         # Download image
         import requests
+        import tempfile
         img_response = requests.get(request.image_url)
         img_data = img_response.content
-        
-        # Save temporarily
-        temp_path = f"/tmp/{uuid.uuid4()}.jpg"
+
+        # Save temporarily (cross-platform)
+        temp_dir = tempfile.gettempdir()
+        temp_path = os.path.join(temp_dir, f"{uuid.uuid4()}.jpg")
         with open(temp_path, 'wb') as f:
             f.write(img_data)
         
         # Analyze with Gemini
         chat = LlmChat(
-            api_key=os.environ.get('EMERGENT_LLM_KEY', ''),
+            api_key=os.environ.get('GEMINI_KEY', ''),
             session_id=str(uuid.uuid4()),
             system_message="""Você é um diretor de fotografia especialista em criar prompts cinematográficos otimizados para Sora 2 e Veo 3.
 
@@ -463,17 +460,17 @@ Retorne EXATAMENTE este JSON:
         
         # Sanitize the analysis data
         analysis_data = sanitize_analysis_prompts(analysis_data)
-        
+
         # Save to database
         analysis = ImageAnalysis(
             image_url=request.image_url,
             analysis=json.dumps(analysis_data),
             suggested_model=analysis_data.get('recommended_model_premium', 'veo3')
         )
-        
+
         doc = analysis.model_dump()
         doc['timestamp'] = doc['timestamp'].isoformat()
-        await db.image_analyses.insert_one(doc)
+        await database.insert_image_analysis(doc)
         
         return {
             "success": True,
@@ -550,11 +547,11 @@ async def generate_audio(request: GenerateAudioRequest):
             voice_settings=voice_settings.model_dump(),
             cost=cost
         )
-        
+
         doc = audio.model_dump()
         doc['timestamp'] = doc['timestamp'].isoformat()
-        await db.audio_generations.insert_one(doc)
-        
+        await database.insert_audio_generation(doc)
+
         # Track usage
         usage = TokenUsage(
             service="elevenlabs",
@@ -564,7 +561,7 @@ async def generate_audio(request: GenerateAudioRequest):
         )
         usage_doc = usage.model_dump()
         usage_doc['timestamp'] = usage_doc['timestamp'].isoformat()
-        await db.token_usage.insert_one(usage_doc)
+        await database.insert_token_usage(usage_doc)
         
         return {
             "success": True,
@@ -711,10 +708,10 @@ async def generate_video(request: GenerateVideoRequest):
             estimated_cost=cost,
             status="processing"
         )
-        
+
         doc = video.model_dump()
         doc['timestamp'] = doc['timestamp'].isoformat()
-        await db.video_generations.insert_one(doc)
+        await database.insert_video_generation(doc)
         
         # Generate video based on model and mode
         result_url = None
@@ -807,15 +804,12 @@ async def generate_video(request: GenerateVideoRequest):
                     raise HTTPException(status_code=503, detail=f"Modelo Wav2Lip Free temporariamente indisponível. Erro: {str(e)}")
         
         # Update record
-        await db.video_generations.update_one(
-            {"id": video_id},
-            {"$set": {
-                "status": "completed",
-                "result_url": result_url,
-                "cost": cost
-            }}
-        )
-        
+        await database.update_video_generation(video_id, {
+            "status": "completed",
+            "result_url": result_url,
+            "cost": cost
+        })
+
         # Track usage (only for paid services)
         if cost > 0:
             usage = TokenUsage(
@@ -826,7 +820,7 @@ async def generate_video(request: GenerateVideoRequest):
             )
             usage_doc = usage.model_dump()
             usage_doc['timestamp'] = usage_doc['timestamp'].isoformat()
-            await db.token_usage.insert_one(usage_doc)
+            await database.insert_token_usage(usage_doc)
         
         return {
             "success": True,
@@ -857,13 +851,10 @@ Exemplo: Em vez de "T-Rex ameaçador rugindo", use "T-Rex impressionante com boc
             error_code = "GENERATION_ERROR"
         
         # Update record with error
-        await db.video_generations.update_one(
-            {"id": video_id},
-            {"$set": {
-                "status": "failed",
-                "error": error_message
-            }}
-        )
+        await database.update_video_generation(video_id, {
+            "status": "failed",
+            "error": error_message
+        })
         
         raise HTTPException(
             status_code=422 if error_code == "CONTENT_POLICY" else 500,
@@ -889,11 +880,11 @@ async def get_token_usage():
     """Get token usage statistics"""
     try:
         # Get all usage records
-        usage_records = await db.token_usage.find({}, {"_id": 0}).to_list(1000)
-        
+        usage_records = await database.get_token_usage(limit=1000)
+
         # Calculate totals
         total_spent = sum(record.get('cost', 0) for record in usage_records)
-        
+
         # Group by service
         by_service = {}
         for record in usage_records:
@@ -901,13 +892,13 @@ async def get_token_usage():
             if service not in by_service:
                 by_service[service] = 0
             by_service[service] += record.get('cost', 0)
-        
+
         # Get recent operations (last 10)
         recent = sorted(usage_records, key=lambda x: x.get('timestamp', ''), reverse=True)[:10]
-        
+
         # Get balances
-        balances = await db.api_balances.find({}, {"_id": 0}).to_list(100)
-        
+        balances = await database.get_all_api_balances()
+
         # Calculate remaining balances
         balance_info = {}
         for balance in balances:
@@ -920,7 +911,7 @@ async def get_token_usage():
                 "spent": round(spent, 2),
                 "remaining": round(remaining, 2)
             }
-        
+
         return {
             "success": True,
             "total_spent": round(total_spent, 2),
@@ -936,29 +927,8 @@ async def get_token_usage():
 async def update_balance(request: UpdateBalanceRequest):
     """Update or create API balance"""
     try:
-        # Check if balance exists
-        existing = await db.api_balances.find_one({"service": request.service})
-        
-        if existing:
-            # Update existing
-            await db.api_balances.update_one(
-                {"service": request.service},
-                {"$set": {
-                    "initial_balance": request.initial_balance,
-                    "last_updated": datetime.now(timezone.utc).isoformat()
-                }}
-            )
-        else:
-            # Create new
-            balance = APIBalance(
-                service=request.service,
-                initial_balance=request.initial_balance,
-                current_balance=request.initial_balance
-            )
-            doc = balance.model_dump()
-            doc['last_updated'] = doc['last_updated'].isoformat()
-            await db.api_balances.insert_one(doc)
-        
+        await database.upsert_api_balance(request.service, request.initial_balance)
+
         return {
             "success": True,
             "message": f"Saldo atualizado para {request.service}"
@@ -972,11 +942,11 @@ async def get_balances():
     """Get all API balances"""
     try:
         # Get all balances
-        balances = await db.api_balances.find({}, {"_id": 0}).to_list(100)
-        
+        balances = await database.get_all_api_balances()
+
         # Get usage
-        usage_records = await db.token_usage.find({}, {"_id": 0}).to_list(1000)
-        
+        usage_records = await database.get_token_usage(limit=1000)
+
         # Group by service
         by_service = {}
         for record in usage_records:
@@ -984,7 +954,7 @@ async def get_balances():
             if service not in by_service:
                 by_service[service] = 0
             by_service[service] += record.get('cost', 0)
-        
+
         # Calculate remaining for each service
         result = {}
         for balance in balances:
@@ -997,7 +967,7 @@ async def get_balances():
                 "spent": round(spent, 2),
                 "remaining": round(remaining, 2)
             }
-        
+
         return {
             "success": True,
             "balances": result
@@ -1010,24 +980,15 @@ async def get_balances():
 async def get_gallery_items():
     """Get all generated videos and audios for gallery"""
     try:
-        # Get all videos
-        videos = await db.video_generations.find(
-            {"status": "completed"},
-            {"_id": 0}
-        ).sort("timestamp", -1).to_list(100)
-        
+        # Get all videos (only completed ones)
+        videos = await database.get_video_generations(status="completed", limit=100)
+
         # Get all audios
-        audios = await db.audio_generations.find(
-            {},
-            {"_id": 0}
-        ).sort("timestamp", -1).to_list(100)
-        
+        audios = await database.get_audio_generations(limit=100)
+
         # Get all images
-        images = await db.image_analyses.find(
-            {},
-            {"_id": 0}
-        ).sort("timestamp", -1).to_list(100)
-        
+        images = await database.get_image_analyses(limit=100)
+
         return {
             "success": True,
             "videos": videos,
@@ -1042,8 +1003,8 @@ async def get_gallery_items():
 async def delete_video(video_id: str):
     """Delete a video from gallery"""
     try:
-        result = await db.video_generations.delete_one({"id": video_id})
-        if result.deleted_count > 0:
+        deleted = await database.delete_video_generation(video_id)
+        if deleted:
             return {"success": True, "message": "Vídeo deletado"}
         else:
             raise HTTPException(status_code=404, detail="Vídeo não encontrado")
@@ -1055,8 +1016,8 @@ async def delete_video(video_id: str):
 async def delete_audio(audio_id: str):
     """Delete an audio from gallery"""
     try:
-        result = await db.audio_generations.delete_one({"id": audio_id})
-        if result.deleted_count > 0:
+        deleted = await database.delete_audio_generation(audio_id)
+        if deleted:
             return {"success": True, "message": "Áudio deletado"}
         else:
             raise HTTPException(status_code=404, detail="Áudio não encontrado")
@@ -1068,8 +1029,8 @@ async def delete_audio(audio_id: str):
 async def delete_image(image_id: str):
     """Delete an image analysis from gallery"""
     try:
-        result = await db.image_analyses.delete_one({"id": image_id})
-        if result.deleted_count > 0:
+        deleted = await database.delete_image_analysis(image_id)
+        if deleted:
             return {"success": True, "message": "Imagem deletada"}
         else:
             raise HTTPException(status_code=404, detail="Imagem não encontrada")
@@ -1080,93 +1041,140 @@ async def delete_image(image_id: str):
 # ==================== IMAGE GENERATION ENDPOINTS ====================
 
 @api_router.post("/images/generate")
-async def generate_image_with_nano_banana(request: GenerateImageRequest):
-    """Generate image using Gemini 2.5 Flash Image (Nano Banana)"""
+async def generate_image_with_nano_banana(
+    prompt: str = Form(...),
+    reference_image: Optional[UploadFile] = File(None)
+):
+    """Generate image using Gemini 2.5 Flash Image (Nano Banana) with optional reference image"""
+    file_contents = []  # Initialize outside try block for finally cleanup
+    
     try:
-        logger.info(f"🎨 Generating image with prompt: {request.prompt[:100]}...")
+        logger.info(f"🎨 Generating image with prompt: {prompt[:100]}...")
         
-        # Use Emergent LLM with Gemini for image generation
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        # Use FAL.AI for image generation with FLUX model
+        import fal_client
         import base64
+        import tempfile
+        import requests
+
+        # Prepare arguments for FAL
+        fal_arguments = {
+            "prompt": prompt,
+            "image_size": "landscape_4_3",  # Options: square, landscape_4_3, landscape_16_9, portrait_4_3, portrait_16_9
+            "num_inference_steps": 28,
+            "guidance_scale": 3.5,
+            "num_images": 1,
+            "enable_safety_checker": True
+        }
         
-        chat = LlmChat(
-            api_key=os.environ.get('EMERGENT_LLM_KEY', ''),
-            session_id=str(uuid.uuid4()),
-            system_message="You are an expert AI image generator. Generate high-quality, creative images based on user prompts."
-        ).with_model("gemini", "gemini-2.5-flash-image-preview").with_params(modalities=["image", "text"])
-        
-        user_message = UserMessage(text=request.prompt)
-        
-        # Generate image with timeout
-        import asyncio
-        try:
-            # Use multimodal response to get images
-            text_response, images = await asyncio.wait_for(
-                chat.send_message_multimodal_response(user_message),
-                timeout=60.0  # 60 seconds timeout for image generation
-            )
-            
-            logger.info(f"✅ Image generation response received: {len(images) if images else 0} images")
-            
-            if not images or len(images) == 0:
-                raise HTTPException(status_code=500, detail="No image generated")
-            
-            # Get the first generated image
-            generated_image_data = images[0]
-            image_base64 = generated_image_data['data']
-            mime_type = generated_image_data.get('mime_type', 'image/png')
-            
-            # Upload to Cloudinary for storage
+        # If reference image is provided, upload it and use in image_url parameter
+        if reference_image:
             try:
-                # Upload directly using base64 data URL
+                # Read image file
+                image_bytes = await reference_image.read()
+                
+                logger.info(f"📎 Reference image provided: {reference_image.filename}")
+                
+                # Upload reference image to cloudinary first
+                import io
                 upload_result = cloudinary.uploader.upload(
-                    f"data:{mime_type};base64,{image_base64}",
-                    folder="generated_images",
+                    io.BytesIO(image_bytes),
+                    folder="reference_images",
                     resource_type="image"
                 )
-                image_url = upload_result['secure_url']
-                cloudinary_id = upload_result['public_id']
-                logger.info(f"✅ Image uploaded to Cloudinary: {cloudinary_id}")
-            except Exception as cloudinary_error:
-                logger.warning(f"Cloudinary upload failed: {str(cloudinary_error)}, using base64")
-                # Fallback: use base64 data URL
-                image_url = f"data:{mime_type};base64,{image_base64}"
-                cloudinary_id = None
+                reference_image_url = upload_result['secure_url']
+                logger.info(f"✅ Reference image uploaded: {reference_image_url}")
+                
+                # Add reference image to FAL arguments
+                fal_arguments["image_url"] = reference_image_url
+                fal_arguments["prompt"] = f"Using the reference image as inspiration, {prompt}"
+                
+            except Exception as img_error:
+                logger.warning(f"Failed to process reference image: {str(img_error)}")
+        
+        # Generate image with FAL.AI using FLUX model
+        import asyncio
+        try:
+            logger.info(f"🎨 Calling FAL.AI FLUX model with arguments: {fal_arguments}")
+            
+            # Use FAL.AI FLUX model for image generation
+            def generate_with_fal():
+                return fal_client.subscribe(
+                    "fal-ai/flux/dev",  # FLUX.1 Dev model
+                    arguments=fal_arguments,
+                    with_logs=False
+                )
+            
+            # Run synchronous FAL call in executor
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(None, generate_with_fal)
+            
+            logger.info(f"✅ FAL.AI generation completed")
+            logger.info(f"🔍 Result keys: {result.keys() if isinstance(result, dict) else 'Not a dict'}")
+            
+            # Extract image URL from result
+            if 'images' in result and len(result['images']) > 0:
+                # FLUX returns a list of image objects with 'url' field
+                image_url = result['images'][0]['url']
+                logger.info(f"✅ Image generated: {image_url}")
+                
+                # Download image and upload to Cloudinary for permanent storage
+                try:
+                    response = requests.get(image_url, timeout=30)
+                    response.raise_for_status()
+                    
+                    upload_result = cloudinary.uploader.upload(
+                        io.BytesIO(response.content),
+                        folder="generated_images",
+                        resource_type="image"
+                    )
+                    image_url = upload_result['secure_url']
+                    cloudinary_id = upload_result['public_id']
+                    logger.info(f"✅ Image uploaded to Cloudinary: {cloudinary_id}")
+                except Exception as cloudinary_error:
+                    logger.warning(f"Cloudinary upload failed: {str(cloudinary_error)}, using FAL URL")
+                    cloudinary_id = None
+            else:
+                raise HTTPException(status_code=500, detail="No image generated by FAL.AI")
             
             image_id = str(uuid.uuid4())
             
             # Save to database
             generated_image = GeneratedImage(
                 id=image_id,
-                prompt=request.prompt,
+                prompt=prompt,
                 image_url=image_url,
-                cost=0.039
+                cost=0.025
             )
-            
+
             doc = generated_image.model_dump()
             doc['timestamp'] = doc['timestamp'].isoformat()
             if cloudinary_id:
                 doc['cloudinary_id'] = cloudinary_id
-            await db.generated_images.insert_one(doc)
-            
-            # Track cost
+            await database.insert_generated_image(doc)
+
+            # Track cost (FLUX.1 Dev pricing)
             usage = TokenUsage(
-                service="Gemini Image Generation",
+                service="FAL.AI FLUX Image Generation",
                 operation="generate_image",
-                cost=0.039,
-                details={"prompt_length": len(request.prompt), "model": "gemini-2.5-flash-image"}
+                cost=0.025,  # Approximate cost per image with FLUX.1 Dev
+                details={
+                    "prompt_length": len(prompt), 
+                    "model": "fal-ai/flux/dev",
+                    "has_reference_image": reference_image is not None,
+                    "image_size": fal_arguments["image_size"]
+                }
             )
             usage_doc = usage.model_dump()
             usage_doc['timestamp'] = usage_doc['timestamp'].isoformat()
-            await db.token_usage.insert_one(usage_doc)
+            await database.insert_token_usage(usage_doc)
             
             return {
                 "success": True,
                 "image_id": image_id,
                 "image_url": image_url,
-                "prompt": request.prompt,
-                "cost": 0.039,
-                "text_response": text_response if text_response else None
+                "prompt": prompt,
+                "cost": 0.025
             }
             
         except asyncio.TimeoutError:
@@ -1181,17 +1189,8 @@ async def generate_image_with_nano_banana(request: GenerateImageRequest):
 async def get_generated_images():
     """Get all generated images"""
     try:
-        images = await db.generated_images.find().sort('timestamp', -1).to_list(length=100)
-        
-        # Convert ObjectId and datetime to strings
-        for img in images:
-            if '_id' in img:
-                del img['_id']
-            if isinstance(img.get('timestamp'), str):
-                pass
-            elif hasattr(img.get('timestamp'), 'isoformat'):
-                img['timestamp'] = img['timestamp'].isoformat()
-        
+        images = await database.get_generated_images(limit=100)
+
         return {
             "success": True,
             "images": images
@@ -1204,9 +1203,9 @@ async def get_generated_images():
 async def delete_generated_image(image_id: str):
     """Delete a generated image"""
     try:
-        result = await db.generated_images.delete_one({"id": image_id})
-        
-        if result.deleted_count > 0:
+        deleted = await database.delete_generated_image(image_id)
+
+        if deleted:
             return {"success": True, "message": "Generated image deleted"}
         else:
             raise HTTPException(status_code=404, detail="Image not found")
@@ -1225,6 +1224,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+@app.on_event("startup")
+async def startup_db():
+    """Initialize SQLite database on startup"""
+    await database.init_db()
+    logger.info("✅ SQLite database initialized successfully")

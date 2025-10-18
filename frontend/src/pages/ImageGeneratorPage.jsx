@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Textarea } from '../components/ui/textarea';
-import { Sparkles, Image as ImageIcon, Download, Trash2, Video, Lightbulb, Wand2, Grid } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, Download, Trash2, Video, Lightbulb, Wand2, Grid, Upload, X } from 'lucide-react';
 import './ImageGeneratorPage.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
@@ -118,11 +118,14 @@ const PROMPT_LIBRARY = {
 
 function ImageGeneratorPage() {
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState(null);
   const [imageHistory, setImageHistory] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('avatares');
+  const [referenceImage, setReferenceImage] = useState(null);
+  const [referenceImagePreview, setReferenceImagePreview] = useState(null);
 
   useEffect(() => {
     loadImageHistory();
@@ -139,6 +142,36 @@ function ImageGeneratorPage() {
     }
   };
 
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast.error('Por favor, selecione um arquivo de imagem válido');
+        return;
+      }
+      
+      setReferenceImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setReferenceImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+      
+      toast.success('Imagem de referência carregada!');
+    }
+  };
+
+  const removeReferenceImage = () => {
+    setReferenceImage(null);
+    setReferenceImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    toast.info('Imagem de referência removida');
+  };
+
   const generateImage = async () => {
     if (!prompt.trim()) {
       toast.error('Por favor, insira um prompt');
@@ -147,8 +180,17 @@ function ImageGeneratorPage() {
 
     setLoading(true);
     try {
-      const response = await axios.post(`${BACKEND_URL}/api/images/generate`, {
-        prompt: prompt
+      const formData = new FormData();
+      formData.append('prompt', prompt);
+      
+      if (referenceImage) {
+        formData.append('reference_image', referenceImage);
+      }
+
+      const response = await axios.post(`${BACKEND_URL}/api/images/generate`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
       if (response.data.success) {
@@ -241,6 +283,65 @@ function ImageGeneratorPage() {
               rows={6}
               className="prompt-textarea"
             />
+            
+            {/* Reference Image Upload */}
+            <div className="reference-image-section" style={{ marginTop: '1rem', marginBottom: '1rem' }}>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                accept="image/*"
+                style={{ display: 'none' }}
+              />
+              
+              {!referenceImagePreview ? (
+                <Button
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full"
+                  type="button"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Carregar Imagem de Referência (Opcional)
+                </Button>
+              ) : (
+                <div style={{ 
+                  border: '2px solid #e5e7eb', 
+                  borderRadius: '8px', 
+                  padding: '1rem',
+                  position: 'relative'
+                }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: '0.5rem'
+                  }}>
+                    <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>
+                      📎 Imagem de Referência
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={removeReferenceImage}
+                      type="button"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <img
+                    src={referenceImagePreview}
+                    alt="Reference"
+                    style={{
+                      width: '100%',
+                      maxHeight: '200px',
+                      objectFit: 'contain',
+                      borderRadius: '4px'
+                    }}
+                  />
+                </div>
+              )}
+            </div>
             
             <div className="quick-actions">
               <Button
