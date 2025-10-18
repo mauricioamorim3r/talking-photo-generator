@@ -244,7 +244,47 @@ Responda em formato JSON:
             file_contents=[image_file]
         )
         
-        response = await chat.send_message(user_message)
+        # Add timeout to Gemini call
+        import asyncio
+        try:
+            response = await asyncio.wait_for(
+                chat.send_message(user_message),
+                timeout=30.0  # 30 seconds timeout
+            )
+        except asyncio.TimeoutError:
+            logger.error("Gemini analysis timed out")
+            # Return a default analysis
+            analysis_data = {
+                "description": "Imagem carregada",
+                "subject_type": "desconhecido",
+                "composition": "Análise não disponível",
+                "recommended_model_premium": "veo3",
+                "recommended_model_economico": "open-sora",
+                "reason_premium": "Modelo versátil de alta qualidade",
+                "reason_economico": "Opção gratuita confiável",
+                "cinematic_prompt": {
+                    "subject_action": "Sujeito em movimento natural",
+                    "camera_shot": "Medium shot",
+                    "camera_movement": "Static shot",
+                    "lighting": "Soft natural light",
+                    "lens": "Shallow depth of field",
+                    "color_style": "Cinematic color grading",
+                    "quality": "Hyper-realistic, 4K"
+                },
+                "full_prompt_premium": "A imagem animada com movimento suave e natural, filmado em alta qualidade cinematográfica, iluminação natural, 4K resolution",
+                "full_prompt_economico": "Animação suave da imagem com qualidade cinematográfica",
+                "tips": "Análise automática não disponível. Você pode editar o prompt conforme necessário."
+            }
+            
+            # Clean up temp file
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            
+            return {
+                "success": True,
+                "analysis": analysis_data,
+                "warning": "Análise automática falhou. Usando configurações padrão."
+            }
         
         # Clean up temp file
         os.remove(temp_path)
