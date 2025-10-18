@@ -507,14 +507,105 @@ async def get_token_usage():
         # Get recent operations (last 10)
         recent = sorted(usage_records, key=lambda x: x.get('timestamp', ''), reverse=True)[:10]
         
+        # Get balances
+        balances = await db.api_balances.find({}, {"_id": 0}).to_list(100)
+        
+        # Calculate remaining balances
+        balance_info = {}
+        for balance in balances:
+            service = balance.get('service')
+            initial = balance.get('initial_balance', 0)
+            spent = by_service.get(service, 0)
+            remaining = initial - spent
+            balance_info[service] = {
+                "initial": round(initial, 2),
+                "spent": round(spent, 2),
+                "remaining": round(remaining, 2)
+            }
+        
         return {
             "success": True,
             "total_spent": round(total_spent, 2),
             "by_service": {k: round(v, 2) for k, v in by_service.items()},
-            "recent_operations": recent
+            "recent_operations": recent,
+            "balances": balance_info
         }
     except Exception as e:
         logger.error(f"Error getting token usage: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/tokens/balance")
+async def update_balance(request: UpdateBalanceRequest):
+    """Update or create API balance"""
+    try:
+        # Check if balance exists
+        existing = await db.api_balances.find_one({"service": request.service})
+        
+        if existing:
+            # Update existing
+            await db.api_balances.update_one(
+                {"service": request.service},
+                {"$set": {
+                    "initial_balance": request.initial_balance,
+                    "last_updated": datetime.now(timezone.utc).isoformat()
+                }}
+            )
+        else:
+            # Create new
+            balance = APIBalance(
+                service=request.service,
+                initial_balance=request.initial_balance,
+                current_balance=request.initial_balance
+            )
+            doc = balance.model_dump()
+            doc['last_updated'] = doc['last_updated'].isoformat()
+            await db.api_balances.insert_one(doc)
+        
+        return {
+            "success": True,
+            "message": f"Saldo atualizado para {request.service}"
+        }
+    except Exception as e:
+        logger.error(f"Error updating balance: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/tokens/balances")
+async def get_balances():
+    """Get all API balances"""
+    try:
+        # Get all balances
+        balances = await db.api_balances.find({}, {"_id": 0}).to_list(100)
+        
+        # Get usage
+        usage_records = await db.token_usage.find({}, {"_id": 0}).to_list(1000)
+        
+        # Group by service
+        by_service = {}
+        for record in usage_records:
+            service = record.get('service', 'unknown')
+            if service not in by_service:
+                by_service[service] = 0
+            by_service[service] += record.get('cost', 0)
+        
+        # Calculate remaining for each service
+        result = {}
+        for balance in balances:
+            service = balance.get('service')
+            initial = balance.get('initial_balance', 0)
+            spent = by_service.get(service, 0)
+            remaining = initial - spent
+            result[service] = {
+                "initial": round(initial, 2),
+                "spent": round(spent, 2),
+                "remaining": round(remaining, 2)
+            }
+        
+        return {
+            "success": True,
+            "balances": result
+        }
+    except Exception as e:
+        logger.error(f"Error getting balances: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Include the router in the main app
