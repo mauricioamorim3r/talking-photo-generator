@@ -308,6 +308,19 @@ Retorne EXATAMENTE este JSON:
 
 ---
 
+## ✅ EXEMPLO COM CRIANÇA (CONTEÚDO SENSÍVEL):
+
+❌ **ERRADO:** "Criança levando colher à boca, café derretendo na boca, close-up extremo do rosto..."
+
+✅ **CORRETO:**
+```json
+{
+  "prompt_sora2": "Criança sorrindo e brincando em um ambiente seguro e familiar. Medium shot com câmera estável. Iluminação natural suave. Color grading quente e acolhedor. Áudio: sons de risadas e ambiente alegre. Filmado em estilo documental de família, 4K.",
+  
+  "prompt_veo3": "Criança em atividade lúdica natural, sorrindo espontaneamente. Wide shot cinematográfico mantendo distância respeitosa. Soft lighting natural. Color grading: tons quentes familiares. Audio design: ambiente doméstico agradável, risadas naturais. Shot em estilo de fotografia de família profissional."
+}
+```
+
 ## ✅ EXEMPLO COMPLETO CORRETO (Gato):
 
 ❌ **ERRADO:** "Gato malhado mantendo 100% da identidade facial original e preservando todas as características faciais com fidelidade..."
