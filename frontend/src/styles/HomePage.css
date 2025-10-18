@@ -384,6 +384,12 @@
   color: #1e40af;
 }
 
+.model-info.wav2lip-info {
+  background: #fef3c7;
+  border-left: 3px solid #f59e0b;
+  color: #92400e;
+}
+
 @media (max-width: 768px) {
   .hero-title {
     font-size: 2rem;
