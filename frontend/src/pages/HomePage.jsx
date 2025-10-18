@@ -169,6 +169,7 @@ const HomePage = () => {
     try {
       const response = await axios.post(`${API}/video/estimate-cost`, {
         model: selectedModel,
+        mode: selectedMode,
         duration: duration,
         with_audio: selectedModel === 'veo3' && audioUrl !== ''
       });
@@ -187,7 +188,7 @@ const HomePage = () => {
       return;
     }
 
-    if (selectedModel === 'wav2lip' && !audioUrl) {
+    if ((selectedModel === 'wav2lip' || selectedModel === 'wav2lip-free') && !audioUrl) {
       toast.error('Wav2lip requer um áudio. Gere ou faça upload de um áudio primeiro.');
       return;
     }
@@ -199,6 +200,7 @@ const HomePage = () => {
       const response = await axios.post(`${API}/video/generate`, {
         image_url: imageUrl,
         model: selectedModel,
+        mode: selectedMode,
         prompt: prompt,
         audio_url: audioUrl || null,
         duration: duration
@@ -207,7 +209,11 @@ const HomePage = () => {
       if (response.data.success) {
         setVideoUrl(response.data.video_url);
         setActualCost(response.data.cost);
-        toast.success(`Vídeo gerado com sucesso! Custo: $${response.data.cost.toFixed(2)}`);
+        if (response.data.is_free) {
+          toast.success(`Vídeo gerado com sucesso! 🎉 GRATUITO`);
+        } else {
+          toast.success(`Vídeo gerado com sucesso! Custo: $${response.data.cost.toFixed(2)}`);
+        }
       }
     } catch (error) {
       console.error('Error generating video:', error);
