@@ -515,7 +515,19 @@ const HomePage = () => {
 
                     <div>
                       <label className="label">Modelo de IA</label>
-                      <Select value={selectedModel} onValueChange={setSelectedModel}>
+                      <Select value={selectedModel} onValueChange={(newModel) => {
+                        setSelectedModel(newModel);
+                        // Update prompt when model changes
+                        if (analysis && selectedMode === 'premium') {
+                          if (newModel === 'sora2' && analysis.prompt_sora2) {
+                            setPrompt(analysis.prompt_sora2);
+                          } else if (newModel === 'veo3' && analysis.prompt_veo3) {
+                            setPrompt(analysis.prompt_veo3);
+                          }
+                        } else if (analysis && selectedMode === 'economico' && analysis.prompt_economico) {
+                          setPrompt(analysis.prompt_economico);
+                        }
+                      }}>
                         <SelectTrigger data-testid="model-select">
                           <SelectValue placeholder="Escolha um modelo" />
                         </SelectTrigger>
