@@ -329,23 +329,20 @@ Retorne EXATAMENTE este JSON:
                 "subject_type": "desconhecido",
                 "has_face": False,
                 "composition": "Análise não disponível - use configurações manuais",
-                "recommended_model_premium": "veo3",
+                "recommended_model_premium": "sora2",
                 "recommended_model_economico": "open-sora",
-                "reason_premium": "Veo3 é versátil e oferece alta qualidade com áudio nativo",
+                "reason_premium": "Sora 2 oferece alta qualidade com física realista e áudio nativo",
                 "reason_economico": "Open-Sora é uma opção gratuita confiável",
-                "cinematic_prompt": {
-                    "subject_action": "Sujeito em movimento natural e realista",
-                    "facial_fidelity": "[Manter identidade facial exata e características originais sem alteração]",
-                    "camera_shot": "Medium shot",
-                    "camera_movement": "Static shot com leve movimento orgânico",
+                "prompt_sora2": "Sujeito em movimento natural e realista, com ação suave e orgânica. Medium shot com câmera estática. Lente 50mm, foco no sujeito. Soft natural light. Color grading cinematográfico com tons naturais. Áudio: ambiente natural com sons de movimento sutis. Filmado em estilo documental, 4K, texturas detalhadas.",
+                "prompt_veo3": "Movimento natural e cinematográfico do sujeito. Close-up com lente 85mm f/1.8, shallow depth of field. Three-point lighting setup profissional. Color grading com tons cinematográficos. Audio design: ambiente natural com elementos sonoros sincronizados. Hyper-realistic, 4K, estilo de commercial high-end.",
+                "prompt_economico": "Animação suave e natural da imagem. Medium shot. Iluminação natural. Movimento realista. Qualidade cinematográfica.",
+                "cinematic_details": {
+                    "subject_action": "Movimento natural e realista do sujeito",
+                    "camera_work": "Medium shot, câmera estática",
                     "lighting": "Soft natural light",
-                    "lens": "Shallow depth of field para foco no sujeito",
-                    "color_style": "Cinematic color grading com tons naturais",
-                    "audio_instruction": "[Áudio ambiente natural sincronizado com a ação, incluindo sons de movimento e fala se aplicável]",
-                    "quality": "Hyper-realistic, 4K, textura detalhada"
+                    "audio_design": "Ambiente natural com sons sutis",
+                    "style": "Cinematográfico, 4K, texturas detalhadas"
                 },
-                "full_prompt_premium": "[Manter identidade facial exata e características originais]. Sujeito em movimento natural e realista. Medium shot, câmera estática com movimento orgânico sutil. Soft natural light difusa. Shallow depth of field para foco no sujeito principal. Cinematic color grading com tons naturais equilibrados. [Incluir áudio ambiente natural sincronizado: sons de movimento, respiração, e fala se aplicável]. Hyper-realistic, texturas detalhadas de pele/pelo/superfície, filmado em qualidade 4K, estilo cinematográfico profissional.",
-                "full_prompt_economico": "Animação suave e natural da imagem. Medium shot. Iluminação natural. Movimento realista. Qualidade cinematográfica.",
                 "tips": "Análise automática não disponível. Você pode editar o prompt conforme necessário para seu vídeo específico."
             }
             
