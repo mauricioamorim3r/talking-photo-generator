@@ -461,9 +461,17 @@ const HomePage = () => {
                           className={`mode-button ${selectedMode === 'premium' ? 'active premium' : ''}`}
                           onClick={() => {
                             setSelectedMode('premium');
-                            setSelectedModel('veo3');
+                            const recommendedModel = analysis?.recommended_model_premium || 'sora2';
+                            setSelectedModel(recommendedModel);
                             if (analysis) {
-                              setPrompt(analysis.full_prompt_premium || '');
+                              // Use model-specific prompt
+                              if (recommendedModel === 'sora2') {
+                                setPrompt(analysis.prompt_sora2 || '');
+                              } else if (recommendedModel === 'veo3') {
+                                setPrompt(analysis.prompt_veo3 || '');
+                              } else {
+                                setPrompt(analysis.prompt_veo3 || '');
+                              }
                             }
                           }}
                           data-testid="premium-mode-button"
