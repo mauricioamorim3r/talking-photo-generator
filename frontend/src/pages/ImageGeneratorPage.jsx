@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Textarea } from '../components/ui/textarea';
-import { Sparkles, Image as ImageIcon, Download, Trash2, Video, Lightbulb, Wand2 } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, Download, Trash2, Video, Lightbulb, Wand2, Grid } from 'lucide-react';
 import './ImageGeneratorPage.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
