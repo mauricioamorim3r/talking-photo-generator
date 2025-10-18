@@ -601,9 +601,15 @@ const HomePage = () => {
                         rows={6}
                         data-testid="prompt-textarea"
                       />
-                      {selectedModel === 'sora2' && (
+                      {(selectedModel === 'veo3' || selectedModel === 'sora2') && (
                         <p className="model-info">
-                          ℹ️ Sora 2 gera áudio automaticamente sincronizado com o vídeo
+                          🎵 {selectedModel === 'veo3' ? 'Veo 3' : 'Sora 2'} gera áudio automaticamente sincronizado com o vídeo. 
+                          Inclua instruções de áudio no prompt (ex: "com sons de risadas e conversas")
+                        </p>
+                      )}
+                      {(selectedModel === 'wav2lip' || selectedModel === 'wav2lip-free') && (
+                        <p className="model-info wav2lip-info">
+                          👄 Wav2lip requer áudio separado para sincronização labial. Você precisará gerar/fazer upload de áudio na próxima etapa.
                         </p>
                       )}
                     </div>
@@ -626,16 +632,17 @@ const HomePage = () => {
                       className="w-full" 
                       size="lg"
                       onClick={() => {
-                        // Se for Sora 2, pular etapa de áudio (já gera nativo)
-                        if (selectedModel === 'sora2') {
+                        // Veo 3 e Sora 2 geram áudio nativo, pular etapa de áudio
+                        if (selectedModel === 'veo3' || selectedModel === 'sora2') {
                           generateVideo();
                         } else {
+                          // Wav2lip e outros precisam de áudio separado
                           setStep(3);
                         }
                       }}
                       data-testid="continue-to-audio-button"
                     >
-                      {selectedModel === 'sora2' ? 'Gerar Vídeo com Áudio' : 'Continuar'}
+                      {(selectedModel === 'veo3' || selectedModel === 'sora2') ? 'Gerar Vídeo com Áudio Nativo' : 'Continuar para Configurar Áudio'}
                     </Button>
                   </CardContent>
                 </Card>
