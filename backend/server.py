@@ -370,23 +370,30 @@ async def estimate_cost(request: EstimateCostRequest):
     try:
         cost = 0.0
         
-        if request.model == "veo3":
-            if request.with_audio:
-                cost = request.duration * 0.40
-            else:
-                cost = request.duration * 0.20
-        elif request.model == "sora2":
-            cost = request.duration * 0.10
-        elif request.model == "wav2lip":
-            # Wav2lip pricing (estimate)
-            cost = request.duration * 0.05
+        if request.mode == "economico":
+            # Modelos gratuitos do HuggingFace
+            cost = 0.0
+        else:
+            # Modelos premium (FAL.AI)
+            if request.model == "veo3":
+                if request.with_audio:
+                    cost = request.duration * 0.40
+                else:
+                    cost = request.duration * 0.20
+            elif request.model == "sora2":
+                cost = request.duration * 0.10
+            elif request.model == "wav2lip":
+                # Wav2lip pricing (estimate)
+                cost = request.duration * 0.05
         
         return {
             "success": True,
             "estimated_cost": round(cost, 2),
             "model": request.model,
+            "mode": request.mode,
             "duration": request.duration,
-            "with_audio": request.with_audio
+            "with_audio": request.with_audio,
+            "is_free": request.mode == "economico"
         }
     except Exception as e:
         logger.error(f"Error estimating cost: {str(e)}")
