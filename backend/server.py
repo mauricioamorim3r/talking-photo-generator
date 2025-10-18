@@ -1213,6 +1213,50 @@ async def delete_generated_image(image_id: str):
         logger.error(f"Error deleting generated image: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# ==================== ROOT ENDPOINTS ====================
+
+@app.get("/")
+async def root():
+    """API Root - Returns basic information"""
+    return {
+        "name": "Talking Photo Generator API",
+        "version": "1.0.0",
+        "status": "running",
+        "endpoints": {
+            "health": "/health",
+            "api": "/api",
+            "docs": "/docs",
+            "redoc": "/redoc"
+        }
+    }
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring"""
+    try:
+        # Check database connection
+        await database.init_db()
+        
+        return {
+            "status": "healthy",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "services": {
+                "api": "ok",
+                "database": "ok",
+                "cloudinary": "configured" if os.environ.get('CLOUDINARY_CLOUD_NAME') else "not_configured",
+                "gemini": "configured" if os.environ.get('GEMINI_KEY') else "not_configured",
+                "elevenlabs": "configured" if os.environ.get('ELEVENLABS_KEY') else "not_configured",
+                "fal": "configured" if os.environ.get('FAL_KEY') else "not_configured"
+            }
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        return {
+            "status": "unhealthy",
+            "error": str(e),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+
 # Include the router in the main app
 app.include_router(api_router)
 
