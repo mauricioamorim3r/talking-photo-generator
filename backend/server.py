@@ -129,6 +129,18 @@ class TokenUsageStats(BaseModel):
     by_service: dict
     recent_operations: List[TokenUsage]
 
+class APIBalance(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    service: str
+    initial_balance: float
+    current_balance: float
+    last_updated: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class UpdateBalanceRequest(BaseModel):
+    service: str
+    initial_balance: float
+
 # ==================== ROUTES ====================
 
 @api_router.get("/")
