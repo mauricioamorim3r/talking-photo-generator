@@ -401,18 +401,20 @@ async def estimate_cost(request: EstimateCostRequest):
 
 @api_router.post("/video/generate")
 async def generate_video(request: GenerateVideoRequest):
-    """Generate video with selected model"""
+    """Generate video with selected model (Premium or Econômico)"""
     try:
         video_id = str(uuid.uuid4())
         
-        # Calculate cost
+        # Calculate cost based on mode
         cost = 0.0
-        if request.model == "veo3":
-            cost = request.duration * (0.40 if request.audio_url else 0.20)
-        elif request.model == "sora2":
-            cost = request.duration * 0.10
-        elif request.model == "wav2lip":
-            cost = request.duration * 0.05
+        if request.mode == "premium":
+            if request.model == "veo3":
+                cost = request.duration * (0.40 if request.audio_url else 0.20)
+            elif request.model == "sora2":
+                cost = request.duration * 0.10
+            elif request.model == "wav2lip":
+                cost = request.duration * 0.05
+        # Modo econômico é gratuito
         
         # Save initial record
         video = VideoGeneration(
@@ -420,6 +422,7 @@ async def generate_video(request: GenerateVideoRequest):
             image_id=request.image_url,
             audio_id=request.audio_url,
             model=request.model,
+            mode=request.mode,
             prompt=request.prompt,
             duration=request.duration,
             estimated_cost=cost,
@@ -430,45 +433,81 @@ async def generate_video(request: GenerateVideoRequest):
         doc['timestamp'] = doc['timestamp'].isoformat()
         await db.video_generations.insert_one(doc)
         
-        # Generate video based on model
+        # Generate video based on model and mode
         result_url = None
         
-        if request.model == "veo3":
-            handler = await fal_client.submit(
-                "fal-ai/veo3.1/image-to-video",
-                arguments={
-                    "image_url": request.image_url,
-                    "prompt": request.prompt,
-                    "duration": request.duration
-                }
-            )
-            result = await handler.get()
-            result_url = result.get('video', {}).get('url')
-            
-        elif request.model == "sora2":
-            handler = await fal_client.submit(
-                "fal-ai/sora-2/image-to-video",
-                arguments={
-                    "image_url": request.image_url,
-                    "prompt": request.prompt
-                }
-            )
-            result = await handler.get()
-            result_url = result.get('video', {}).get('url')
-            
-        elif request.model == "wav2lip":
-            if not request.audio_url:
-                raise HTTPException(status_code=400, detail="Audio URL required for Wav2lip")
-            
-            handler = await fal_client.submit(
-                "fal-ai/wav2lip",
-                arguments={
-                    "face_url": request.image_url,
-                    "audio_url": request.audio_url
-                }
-            )
-            result = await handler.get()
-            result_url = result.get('video', {}).get('url')
+        if request.mode == "premium":
+            # Premium models via FAL.AI
+            if request.model == "veo3":
+                handler = await fal_client.submit(
+                    "fal-ai/veo3.1/image-to-video",
+                    arguments={
+                        "image_url": request.image_url,
+                        "prompt": request.prompt,
+                        "duration": request.duration
+                    }
+                )
+                result = await handler.get()
+                result_url = result.get('video', {}).get('url')
+                
+            elif request.model == "sora2":
+                handler = await fal_client.submit(
+                    "fal-ai/sora-2/image-to-video",
+                    arguments={
+                        "image_url": request.image_url,
+                        "prompt": request.prompt
+                    }
+                )
+                result = await handler.get()
+                result_url = result.get('video', {}).get('url')
+                
+            elif request.model == "wav2lip":
+                if not request.audio_url:
+                    raise HTTPException(status_code=400, detail="Audio URL required for Wav2lip")
+                
+                handler = await fal_client.submit(
+                    "fal-ai/wav2lip",
+                    arguments={
+                        "face_url": request.image_url,
+                        "audio_url": request.audio_url
+                    }
+                )
+                result = await handler.get()
+                result_url = result.get('video', {}).get('url')
+        
+        elif request.mode == "economico":
+            # Free models via HuggingFace Spaces
+            if request.model == "open-sora":
+                try:
+                    # Use HuggingFace Open-Sora Space
+                    hf_client = Client("hpcai-tech/Open-Sora")
+                    result = hf_client.predict(
+                        prompt=request.prompt,
+                        image=request.image_url,
+                        api_name="/predict"
+                    )
+                    result_url = result
+                except Exception as e:
+                    logger.error(f"Error with Open-Sora: {str(e)}")
+                    raise HTTPException(status_code=503, detail=f"Modelo Open-Sora temporariamente indisponível. Erro: {str(e)}")
+                    
+            elif request.model == "wav2lip-free":
+                if not request.audio_url:
+                    raise HTTPException(status_code=400, detail="Audio URL required for Wav2lip")
+                
+                try:
+                    # Use HuggingFace Wav2Lip Space (procurar space público disponível)
+                    # Nota: Pode variar dependendo do space disponível
+                    hf_client = Client("fffiloni/Wav2Lip")
+                    result = hf_client.predict(
+                        image=request.image_url,
+                        audio=request.audio_url,
+                        api_name="/predict"
+                    )
+                    result_url = result
+                except Exception as e:
+                    logger.error(f"Error with Wav2Lip Free: {str(e)}")
+                    raise HTTPException(status_code=503, detail=f"Modelo Wav2Lip Free temporariamente indisponível. Erro: {str(e)}")
         
         # Update record
         await db.video_generations.update_one(
@@ -480,22 +519,25 @@ async def generate_video(request: GenerateVideoRequest):
             }}
         )
         
-        # Track usage
-        usage = TokenUsage(
-            service="fal_ai",
-            operation=f"video_generation_{request.model}",
-            cost=cost,
-            details={"duration": request.duration, "model": request.model}
-        )
-        usage_doc = usage.model_dump()
-        usage_doc['timestamp'] = usage_doc['timestamp'].isoformat()
-        await db.token_usage.insert_one(usage_doc)
+        # Track usage (only for paid services)
+        if cost > 0:
+            usage = TokenUsage(
+                service="fal_ai",
+                operation=f"video_generation_{request.model}",
+                cost=cost,
+                details={"duration": request.duration, "model": request.model, "mode": request.mode}
+            )
+            usage_doc = usage.model_dump()
+            usage_doc['timestamp'] = usage_doc['timestamp'].isoformat()
+            await db.token_usage.insert_one(usage_doc)
         
         return {
             "success": True,
             "video_id": video_id,
             "video_url": result_url,
-            "cost": cost
+            "cost": cost,
+            "mode": request.mode,
+            "is_free": request.mode == "economico"
         }
         
     except Exception as e:
