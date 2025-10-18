@@ -481,7 +481,8 @@ async def generate_video(request: GenerateVideoRequest):
         if request.mode == "premium":
             # Premium models via FAL.AI
             if request.model == "veo3":
-                handler = await fal_client.submit(
+                import asyncio
+                handler = fal_client.submit(
                     "fal-ai/veo3.1/image-to-video",
                     arguments={
                         "image_url": request.image_url,
@@ -489,32 +490,43 @@ async def generate_video(request: GenerateVideoRequest):
                         "duration": request.duration
                     }
                 )
-                result = await handler.get()
+                # Run in executor to avoid blocking
+                result = await asyncio.get_event_loop().run_in_executor(
+                    None, handler.get
+                )
                 result_url = result.get('video', {}).get('url')
                 
             elif request.model == "sora2":
-                handler = await fal_client.submit(
+                import asyncio
+                handler = fal_client.submit(
                     "fal-ai/sora-2/image-to-video",
                     arguments={
                         "image_url": request.image_url,
                         "prompt": request.prompt
                     }
                 )
-                result = await handler.get()
+                # Run in executor to avoid blocking
+                result = await asyncio.get_event_loop().run_in_executor(
+                    None, handler.get
+                )
                 result_url = result.get('video', {}).get('url')
                 
             elif request.model == "wav2lip":
                 if not request.audio_url:
                     raise HTTPException(status_code=400, detail="Audio URL required for Wav2lip")
                 
-                handler = await fal_client.submit(
+                import asyncio
+                handler = fal_client.submit(
                     "fal-ai/wav2lip",
                     arguments={
                         "face_url": request.image_url,
                         "audio_url": request.audio_url
                     }
                 )
-                result = await handler.get()
+                # Run in executor to avoid blocking
+                result = await asyncio.get_event_loop().run_in_executor(
+                    None, handler.get
+                )
                 result_url = result.get('video', {}).get('url')
         
         elif request.mode == "economico":
