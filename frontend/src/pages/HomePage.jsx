@@ -43,15 +43,22 @@ const HomePage = () => {
   
   const webcamRef = useRef(null);
   const fileInputRef = useRef(null);
+  const voicesFetchedRef = useRef(false);
 
   const fetchVoices = async () => {
+    // Prevent multiple calls
+    if (voicesFetchedRef.current) return;
+    
     try {
+      voicesFetchedRef.current = true;
       const response = await axios.get(`${API}/audio/voices`);
       if (response.data.success) {
         setVoices(response.data.voices);
       }
     } catch (error) {
       console.error('Error fetching voices:', error);
+      voicesFetchedRef.current = false; // Allow retry on error
+      // Don't show error toast here as it's not critical
     }
   };
 
