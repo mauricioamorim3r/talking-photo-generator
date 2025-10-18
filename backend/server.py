@@ -300,15 +300,6 @@ Responda em formato JSON:
                 "full_prompt_economico": "Animação suave e natural da imagem. Medium shot. Iluminação natural. Movimento realista. Qualidade cinematográfica.",
                 "tips": "Análise automática não disponível. Você pode editar o prompt conforme necessário para seu vídeo específico."
             }
-                    "lighting": "Soft natural light",
-                    "lens": "Shallow depth of field",
-                    "color_style": "Cinematic color grading",
-                    "quality": "Hyper-realistic, 4K"
-                },
-                "full_prompt_premium": "A imagem animada com movimento suave e natural, filmado em alta qualidade cinematográfica, iluminação natural, 4K resolution",
-                "full_prompt_economico": "Animação suave da imagem com qualidade cinematográfica",
-                "tips": "Análise automática não disponível. Você pode editar o prompt conforme necessário."
-            }
             
             # Clean up temp file
             if os.path.exists(temp_path):
