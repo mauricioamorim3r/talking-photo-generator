@@ -225,7 +225,20 @@ const HomePage = () => {
       }
     } catch (error) {
       console.error('Error generating video:', error);
-      toast.error('Erro ao gerar vídeo: ' + (error.response?.data?.detail || error.message));
+      
+      // Check if it's a content policy error
+      const errorDetail = error.response?.data?.detail;
+      if (errorDetail && typeof errorDetail === 'object') {
+        if (errorDetail.error_code === 'CONTENT_POLICY') {
+          // Show detailed content policy message
+          toast.error(errorDetail.message, { duration: 10000 });
+        } else {
+          toast.error(errorDetail.message || 'Erro ao gerar vídeo');
+        }
+      } else {
+        toast.error('Erro ao gerar vídeo: ' + (errorDetail || error.message));
+      }
+      
       setStep(3);
     } finally {
       setLoading(false);
