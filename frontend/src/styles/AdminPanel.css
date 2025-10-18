@@ -173,6 +173,73 @@
   font-weight: 600;
 }
 
+.balances-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.balance-card {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #fef3ff 0%, #f0fff9 100%);
+  border-radius: 1rem;
+  border: 2px solid #e9d5ff;
+}
+
+.balance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.balance-header h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.balance-edit-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.balance-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.balance-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.balance-row:last-child {
+  border-bottom: none;
+}
+
+.balance-row.balance-remaining {
+  padding-top: 0.75rem;
+  margin-top: 0.5rem;
+  border-top: 2px solid #d1d5db;
+  font-weight: 600;
+  font-size: 1.125rem;
+}
+
+.balance-value {
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.balance-spent {
+  font-weight: 600;
+  color: #dc2626;
+}
+
 @media (max-width: 768px) {
   .admin-header h1 {
     font-size: 1.5rem;
