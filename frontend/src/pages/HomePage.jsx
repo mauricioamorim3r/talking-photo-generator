@@ -486,9 +486,10 @@ const HomePage = () => {
                           className={`mode-button ${selectedMode === 'economico' ? 'active economico' : ''}`}
                           onClick={() => {
                             setSelectedMode('economico');
-                            setSelectedModel('open-sora');
+                            const recommendedModel = analysis?.recommended_model_economico || 'open-sora';
+                            setSelectedModel(recommendedModel);
                             if (analysis) {
-                              setPrompt(analysis.full_prompt_economico || '');
+                              setPrompt(analysis.prompt_economico || '');
                             }
                           }}
                           data-testid="economico-mode-button"
