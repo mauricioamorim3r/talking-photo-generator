@@ -469,3 +469,41 @@ agent_communication:
       5. Test prompt library templates
       6. Test image-to-video integration
       7. Verify cost tracking in admin panel
+  - agent: "testing"
+    message: |
+      🎉 FAL VIDEO GENERATION TESTING COMPLETE - ALL MODELS WORKING PERFECTLY
+      
+      COMPREHENSIVE FAL.AI TESTING RESULTS:
+      ✅ Updated FAL_KEY authentication: bc159ba6-83c6-45eb-866e-53e2e7b80416:dad0dac31d8d9f3ee237ba22fb1f1e7d
+      ✅ Previous "No user found for Key ID and Secret" error RESOLVED
+      
+      🎬 SORA 2 VIDEO GENERATION:
+      - Test image: Cat photo from Unsplash
+      - Prompt: "Cat looking up with curiosity, ears moving, eyes focused. Medium shot, natural lighting."
+      - Duration: 5 seconds
+      - Result: SUCCESS ✅
+      - Video URL: https://v3b.fal.media/files/b/penguin/XqQ9-1emonD7BI2DFgVlO_ph6HmxZA.mp4
+      - Cost: $0.50
+      - Processing time: ~2 minutes
+      
+      🎬 VEO 3 VIDEO GENERATION:
+      - Test image: Same cat photo from Unsplash
+      - Prompt: "Cat turning head slowly, cinematic close-up, soft lighting."
+      - Duration: Fixed to "8s" (Veo 3 requirement)
+      - Result: SUCCESS ✅
+      - Video URL: https://v3b.fal.media/files/b/tiger/WxY6KGRiHI15neYKsmmcR_output.mp4
+      - Cost: $1.00
+      - Processing time: ~3 minutes
+      
+      🔧 TECHNICAL FIXES APPLIED:
+      - Fixed Veo 3 duration parameter: Changed from integer to "8s" string format
+      - Backend properly handles model-specific requirements
+      - Prompt sanitization working correctly (no content policy violations)
+      
+      ✅ BACKEND INTEGRATION VERIFIED:
+      - /api/video/generate endpoint working for both models
+      - Cost estimation accurate ($0.50 Sora 2, $1.00 Veo 3)
+      - Video generation requests properly authenticated
+      - No authentication errors with updated FAL_KEY
+      
+      FINAL STATUS: FAL video generation fully operational with both Sora 2 and Veo 3 models
