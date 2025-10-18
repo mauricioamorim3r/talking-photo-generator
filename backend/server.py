@@ -532,25 +532,28 @@ async def generate_video(request: GenerateVideoRequest):
         # Function to sanitize prompt for content policy
         def sanitize_prompt(prompt):
             """Remove potentially problematic words that trigger content filters"""
-            problematic_words = {
-                'ameaçador': 'impressionante',
-                'ameaçadora': 'impressionante',
-                'assustador': 'surpreendente',
-                'violento': 'intenso',
-                'afiados': 'visíveis',
-                'afiado': 'visível',
-                'ataque': 'aproximação',
-                'atacar': 'se aproximar',
-                'medo': 'surpresa',
-                'terror': 'admiração',
-                'pânico': 'reação',
-                'sangue': 'efeito',
-                'morte': 'drama'
-            }
+            import re
+            
+            problematic_patterns = [
+                (r'ameaçador(a|amente|es)?', 'impressionante'),
+                (r'assustador(a|es)?', 'surpreendente'),
+                (r'violento?(a|s)?', 'intenso'),
+                (r'afiado?(a|s)?', 'visível'),
+                (r'afiado?(a|s)?', 'proeminente'),
+                (r'ataca(r|ndo|m)?', 'aproxima'),
+                (r'ataque', 'aproximação'),
+                (r'medo', 'admiração'),
+                (r'terror', 'impacto'),
+                (r'pânico', 'intensidade'),
+                (r'sangue', 'cor vermelha'),
+                (r'mort(e|al|ais)?', 'drama'),
+                (r'agressiv(o|a|os|as|amente)?', 'energétic'),
+                (r'perigoso?(a|s)?', 'impressionante')
+            ]
             
             sanitized = prompt
-            for word, replacement in problematic_words.items():
-                sanitized = sanitized.replace(word, replacement)
+            for pattern, replacement in problematic_patterns:
+                sanitized = re.sub(pattern, replacement, sanitized, flags=re.IGNORECASE)
             
             return sanitized
         
@@ -559,7 +562,11 @@ async def generate_video(request: GenerateVideoRequest):
         sanitized_prompt = sanitize_prompt(request.prompt)
         
         if original_prompt != sanitized_prompt:
-            logger.info(f"Prompt sanitized to comply with content policy")
+            logger.warning(f"⚠️ PROMPT SANITIZED!")
+            logger.warning(f"ORIGINAL: {original_prompt[:200]}")
+            logger.warning(f"SANITIZED: {sanitized_prompt[:200]}")
+        else:
+            logger.info(f"✅ Prompt clean: {sanitized_prompt[:100]}")
         
         # Calculate cost based on mode
         cost = 0.0
