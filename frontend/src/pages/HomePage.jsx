@@ -118,11 +118,20 @@ const HomePage = () => {
         setAnalysis(response.data.analysis);
         // Set model based on selected mode
         if (selectedMode === 'premium') {
-          setSelectedModel(response.data.analysis.recommended_model_premium || 'veo3');
-          setPrompt(response.data.analysis.full_prompt_premium || response.data.analysis.tips || '');
+          const recommendedModel = response.data.analysis.recommended_model_premium || 'sora2';
+          setSelectedModel(recommendedModel);
+          // Use model-specific prompt
+          if (recommendedModel === 'sora2') {
+            setPrompt(response.data.analysis.prompt_sora2 || response.data.analysis.tips || '');
+          } else if (recommendedModel === 'veo3') {
+            setPrompt(response.data.analysis.prompt_veo3 || response.data.analysis.tips || '');
+          } else {
+            // wav2lip fallback
+            setPrompt(response.data.analysis.prompt_veo3 || response.data.analysis.tips || '');
+          }
         } else {
           setSelectedModel(response.data.analysis.recommended_model_economico || 'open-sora');
-          setPrompt(response.data.analysis.full_prompt_economico || response.data.analysis.tips || '');
+          setPrompt(response.data.analysis.prompt_economico || response.data.analysis.tips || '');
         }
         toast.success('Análise cinematográfica concluída!');
         setStep(2);
