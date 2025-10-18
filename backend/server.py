@@ -176,7 +176,7 @@ async def upload_image(file: UploadFile = File(...)):
 
 @api_router.post("/images/analyze")
 async def analyze_image(request: AnalyzeImageRequest):
-    """Analyze image with Gemini and suggest best model"""
+    """Analyze image with Gemini and suggest best model with cinematic prompts"""
     try:
         # Download image
         import requests
@@ -192,20 +192,44 @@ async def analyze_image(request: AnalyzeImageRequest):
         chat = LlmChat(
             api_key=os.environ.get('EMERGENT_LLM_KEY', ''),
             session_id=str(uuid.uuid4()),
-            system_message="""Você é um especialista em análise de imagens para geração de vídeos animados. 
-            Analise a imagem e sugira o melhor modelo:
-            - Veo 3: Melhor para cenas complexas, movimentos naturais, alta qualidade geral
-            - Sora 2: Melhor para animações rápidas, custo-benefício, boa qualidade
-            - Wav2lip: Melhor quando já existe vídeo e precisa sincronizar lábios com áudio
-            
-            Responda em formato JSON:
-            {
-              "description": "Descrição detalhada da imagem",
-              "subject_type": "pessoa/animal/objeto/boneco",
-              "recommended_model": "veo3/sora2/wav2lip",
-              "reason": "Motivo da recomendação",
-              "tips": "Dicas para o prompt"
-            }"""
+            system_message="""Você é um diretor de fotografia e especialista em análise de imagens para geração de vídeos cinematográficos.
+
+Analise a imagem e forneça:
+1. Análise técnica do sujeito e composição
+2. Recomendação de modelo (Modo Premium: veo3/sora2/wav2lip, Modo Econômico: open-sora/wav2lip-free)
+3. Sugestão de prompt cinematográfico seguindo a estrutura:
+
+**Estrutura do Prompt Cinematográfico:**
+- Assunto e Ação: O que está na imagem e o que deve fazer
+- Tipo de Plano: Close-up, plano médio, plano aberto
+- Movimento de Câmera: Estático, pan, dolly, handheld
+- Iluminação: Natural suave, golden hour, dramática, rim light
+- Lente: Shallow depth of field, sharp focus, anamórfica
+- Cor e Estilo: Cinematic teal/orange, vibrante, desaturado
+- Qualidade: Hyper-realistic, 4K, filmado em 35mm, ARRI Alexa
+
+Responda em formato JSON:
+{
+  "description": "Descrição detalhada da imagem",
+  "subject_type": "pessoa/animal/objeto/boneco",
+  "composition": "Análise da composição e enquadramento",
+  "recommended_model_premium": "veo3/sora2/wav2lip",
+  "recommended_model_economico": "open-sora/wav2lip-free",
+  "reason_premium": "Por que este modelo premium",
+  "reason_economico": "Por que este modelo econômico",
+  "cinematic_prompt": {
+    "subject_action": "Ex: Um husky siberiano olhando para a câmera, piscando lentamente",
+    "camera_shot": "Ex: Medium shot, close-up",
+    "camera_movement": "Ex: Static shot, slow pan to the right",
+    "lighting": "Ex: Soft natural light, golden hour",
+    "lens": "Ex: Shallow depth of field, anamorphic lens",
+    "color_style": "Ex: Cinematic teal and orange grading",
+    "quality": "Ex: Hyper-realistic, 4K, shot on 35mm film"
+  },
+  "full_prompt_premium": "Prompt completo otimizado para modelos premium",
+  "full_prompt_economico": "Prompt completo otimizado para modelos econômicos",
+  "tips": "Dicas adicionais para melhorar o resultado"
+}"""
         ).with_model("gemini", "gemini-2.0-flash")
         
         image_file = FileContentWithMimeType(
@@ -214,7 +238,7 @@ async def analyze_image(request: AnalyzeImageRequest):
         )
         
         user_message = UserMessage(
-            text="Analise esta imagem e sugira o melhor modelo para animá-la.",
+            text="Analise esta imagem como um diretor de fotografia e sugira prompts cinematográficos completos para ambos os modos (Premium e Econômico).",
             file_contents=[image_file]
         )
         
@@ -231,7 +255,7 @@ async def analyze_image(request: AnalyzeImageRequest):
         analysis = ImageAnalysis(
             image_url=request.image_url,
             analysis=json.dumps(analysis_data),
-            suggested_model=analysis_data.get('recommended_model', 'veo3')
+            suggested_model=analysis_data.get('recommended_model_premium', 'veo3')
         )
         
         doc = analysis.model_dump()
