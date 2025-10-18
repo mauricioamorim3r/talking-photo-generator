@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Upload, Camera, Sparkles, Video, Mic, Loader2, Download, DollarSign, Play } from 'lucide-react';
+import { Upload, Camera, Sparkles, Video, Mic, Loader2, Download, DollarSign, Play, Wand2, AlertCircle, Crown, Zap } from 'lucide-react';
 import axios from 'axios';
 import Webcam from 'react-webcam';
 import { Button } from '../components/ui/button';
@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Slider } from '../components/ui/slider';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import '../styles/HomePage.css';
