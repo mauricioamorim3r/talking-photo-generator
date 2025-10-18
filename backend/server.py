@@ -129,6 +129,17 @@ class EstimateCostRequest(BaseModel):
     duration: int
     with_audio: bool = False
 
+class GeneratedImage(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    prompt: str
+    image_url: str
+    cost: float = 0.039  # Nano Banana cost per image
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class GenerateImageRequest(BaseModel):
+    prompt: str
+
 class VerifyPasswordRequest(BaseModel):
     password: str
 
