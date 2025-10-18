@@ -1095,8 +1095,7 @@ async def generate_image_with_nano_banana(request: GenerateImageRequest):
             
             # Upload to Cloudinary for storage
             try:
-                # Decode base64 to upload
-                image_bytes = base64.b64decode(image_base64)
+                # Upload directly using base64 data URL
                 upload_result = cloudinary.uploader.upload(
                     f"data:{mime_type};base64,{image_base64}",
                     folder="generated_images",
