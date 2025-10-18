@@ -728,6 +728,77 @@ async def get_balances():
         logger.error(f"Error getting balances: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.get("/gallery/items")
+async def get_gallery_items():
+    """Get all generated videos and audios for gallery"""
+    try:
+        # Get all videos
+        videos = await db.video_generations.find(
+            {"status": "completed"},
+            {"_id": 0}
+        ).sort("timestamp", -1).to_list(100)
+        
+        # Get all audios
+        audios = await db.audio_generations.find(
+            {},
+            {"_id": 0}
+        ).sort("timestamp", -1).to_list(100)
+        
+        # Get all images
+        images = await db.image_analyses.find(
+            {},
+            {"_id": 0}
+        ).sort("timestamp", -1).to_list(100)
+        
+        return {
+            "success": True,
+            "videos": videos,
+            "audios": audios,
+            "images": images
+        }
+    except Exception as e:
+        logger.error(f"Error getting gallery items: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/gallery/video/{video_id}")
+async def delete_video(video_id: str):
+    """Delete a video from gallery"""
+    try:
+        result = await db.video_generations.delete_one({"id": video_id})
+        if result.deleted_count > 0:
+            return {"success": True, "message": "Vídeo deletado"}
+        else:
+            raise HTTPException(status_code=404, detail="Vídeo não encontrado")
+    except Exception as e:
+        logger.error(f"Error deleting video: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/gallery/audio/{audio_id}")
+async def delete_audio(audio_id: str):
+    """Delete an audio from gallery"""
+    try:
+        result = await db.audio_generations.delete_one({"id": audio_id})
+        if result.deleted_count > 0:
+            return {"success": True, "message": "Áudio deletado"}
+        else:
+            raise HTTPException(status_code=404, detail="Áudio não encontrado")
+    except Exception as e:
+        logger.error(f"Error deleting audio: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/gallery/image/{image_id}")
+async def delete_image(image_id: str):
+    """Delete an image analysis from gallery"""
+    try:
+        result = await db.image_analyses.delete_one({"id": image_id})
+        if result.deleted_count > 0:
+            return {"success": True, "message": "Imagem deletada"}
+        else:
+            raise HTTPException(status_code=404, detail="Imagem não encontrada")
+    except Exception as e:
+        logger.error(f"Error deleting image: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Include the router in the main app
 app.include_router(api_router)
 
