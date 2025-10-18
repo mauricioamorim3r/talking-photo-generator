@@ -378,8 +378,32 @@ const HomePage = () => {
                         <h4><Sparkles className="w-4 h-4 inline mr-2" />Análise da IA</h4>
                         <p><strong>Tipo:</strong> {analysis.subject_type}</p>
                         <p><strong>Descrição:</strong> {analysis.description}</p>
-                        <p><strong>Modelo Recomendado:</strong> {analysis.recommended_model?.toUpperCase()}</p>
-                        <p><strong>Motivo:</strong> {analysis.reason}</p>
+                        {selectedMode === 'premium' ? (
+                          <>
+                            <p><strong>Modelo Recomendado:</strong> {analysis.recommended_model_premium?.toUpperCase()}</p>
+                            <p><strong>Motivo:</strong> {analysis.reason_premium}</p>
+                          </>
+                        ) : (
+                          <>
+                            <p><strong>Modelo Recomendado:</strong> {analysis.recommended_model_economico?.toUpperCase()}</p>
+                            <p><strong>Motivo:</strong> {analysis.reason_economico}</p>
+                          </>
+                        )}
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-3 w-full"
+                          onClick={() => analyzeImage(imageUrl)}
+                          disabled={loading}
+                          data-testid="reanalyze-button"
+                        >
+                          {loading ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Sparkles className="w-4 h-4 mr-2" />
+                          )}
+                          Re-analisar Imagem
+                        </Button>
                       </div>
                     )}
                   </CardContent>
