@@ -122,7 +122,7 @@ function ImageGeneratorPage() {
   const [loading, setLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState(null);
   const [imageHistory, setImageHistory] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('realistic');
+  const [selectedCategory, setSelectedCategory] = useState('avatares');
 
   useEffect(() => {
     loadImageHistory();
