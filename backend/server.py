@@ -327,6 +327,54 @@ CORRETO: "T-Rex impressionante e majestoso abrindo a boca mostrando dentes, rugi
         import json
         analysis_data = json.loads(response.strip('```json').strip('```').strip())
         
+        # Function to sanitize all prompts in analysis
+        def sanitize_analysis_prompts(data):
+            """Clean all prompts in analysis data"""
+            problematic_words = {
+                'ameaçador': 'impressionante',
+                'ameaçadora': 'impressionante',
+                'ameaçadoramente': 'impressionantemente',
+                'assustador': 'surpreendente',
+                'assustadora': 'surpreendente',
+                'violento': 'intenso',
+                'violenta': 'intensa',
+                'afiados': 'visíveis',
+                'afiado': 'visível',
+                'afiada': 'visível',
+                'ataque': 'aproximação',
+                'atacar': 'se aproximar',
+                'atacando': 'se aproximando',
+                'medo': 'admiração',
+                'terror': 'impacto',
+                'pânico': 'reação intensa',
+                'sangue': 'efeito dramático',
+                'morte': 'drama',
+                'agressiv': 'energétic'
+            }
+            
+            # Clean all string fields recursively
+            def clean_text(text):
+                if not isinstance(text, str):
+                    return text
+                cleaned = text
+                for word, replacement in problematic_words.items():
+                    cleaned = cleaned.replace(word, replacement)
+                return cleaned
+            
+            def clean_dict(d):
+                if isinstance(d, dict):
+                    return {k: clean_dict(v) for k, v in d.items()}
+                elif isinstance(d, list):
+                    return [clean_dict(item) for item in d]
+                elif isinstance(d, str):
+                    return clean_text(d)
+                return d
+            
+            return clean_dict(data)
+        
+        # Sanitize the analysis data
+        analysis_data = sanitize_analysis_prompts(analysis_data)
+        
         # Save to database
         analysis = ImageAnalysis(
             image_url=request.image_url,
