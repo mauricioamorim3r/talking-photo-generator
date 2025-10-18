@@ -339,9 +339,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Model-specific prompt generation (Sora 2 & Veo 3)"
-    - "Prompt sanitization for content policy compliance"
-    - "Display model-specific prompts"
+    - "FAL video generation with Sora 2 and Veo 3 models"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
