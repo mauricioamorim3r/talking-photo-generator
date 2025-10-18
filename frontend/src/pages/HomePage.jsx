@@ -108,9 +108,15 @@ const HomePage = () => {
 
       if (response.data.success) {
         setAnalysis(response.data.analysis);
-        setSelectedModel(response.data.analysis.recommended_model);
-        setPrompt(response.data.analysis.tips || '');
-        toast.success('Análise concluída! Modelo sugerido: ' + response.data.analysis.recommended_model.toUpperCase());
+        // Set model based on selected mode
+        if (selectedMode === 'premium') {
+          setSelectedModel(response.data.analysis.recommended_model_premium || 'veo3');
+          setPrompt(response.data.analysis.full_prompt_premium || response.data.analysis.tips || '');
+        } else {
+          setSelectedModel(response.data.analysis.recommended_model_economico || 'open-sora');
+          setPrompt(response.data.analysis.full_prompt_economico || response.data.analysis.tips || '');
+        }
+        toast.success('Análise cinematográfica concluída!');
         setStep(2);
       }
     } catch (error) {
@@ -119,6 +125,15 @@ const HomePage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyCinematicPrompt = () => {
+    if (selectedMode === 'premium') {
+      setPrompt(analysis.full_prompt_premium || '');
+    } else {
+      setPrompt(analysis.full_prompt_economico || '');
+    }
+    toast.success('Prompt cinematográfico aplicado!');
   };
 
   const generateAudio = async () => {
