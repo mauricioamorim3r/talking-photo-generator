@@ -299,6 +299,14 @@ const HomePage = () => {
             </Button>
             <Button 
               variant="outline" 
+              onClick={() => window.location.href = '/image-generator'}
+              data-testid="image-generator-button"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Gerar Imagens
+            </Button>
+            <Button 
+              variant="outline" 
               onClick={() => window.location.href = '/admin'}
               data-testid="admin-button"
             >
