@@ -41,11 +41,6 @@ const HomePage = () => {
   const webcamRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Load voices on component mount
-  useState(() => {
-    fetchVoices();
-  }, []);
-
   const fetchVoices = async () => {
     try {
       const response = await axios.get(`${API}/audio/voices`);
