@@ -304,25 +304,53 @@ function ImageGeneratorPage() {
           <CardContent>
             <div className="category-selector">
               <Button
-                variant={selectedCategory === 'realistic' ? 'default' : 'outline'}
-                onClick={() => setSelectedCategory('realistic')}
+                variant={selectedCategory === 'avatares' ? 'default' : 'outline'}
+                onClick={() => setSelectedCategory('avatares')}
                 size="sm"
               >
-                Realista
+                👤 Avatares (14)
               </Button>
               <Button
-                variant={selectedCategory === 'anime' ? 'default' : 'outline'}
-                onClick={() => setSelectedCategory('anime')}
+                variant={selectedCategory === 'estilos' ? 'default' : 'outline'}
+                onClick={() => setSelectedCategory('estilos')}
                 size="sm"
               >
-                Anime
+                🎨 Estilos (13)
               </Button>
               <Button
-                variant={selectedCategory === 'editing' ? 'default' : 'outline'}
-                onClick={() => setSelectedCategory('editing')}
+                variant={selectedCategory === 'design' ? 'default' : 'outline'}
+                onClick={() => setSelectedCategory('design')}
                 size="sm"
               >
-                Edição
+                📐 Design (12)
+              </Button>
+              <Button
+                variant={selectedCategory === 'manipulacao' ? 'default' : 'outline'}
+                onClick={() => setSelectedCategory('manipulacao')}
+                size="sm"
+              >
+                ✨ Edição (13)
+              </Button>
+              <Button
+                variant={selectedCategory === 'mundos' ? 'default' : 'outline'}
+                onClick={() => setSelectedCategory('mundos')}
+                size="sm"
+              >
+                🌍 Mundos (12)
+              </Button>
+              <Button
+                variant={selectedCategory === 'criativo' ? 'default' : 'outline'}
+                onClick={() => setSelectedCategory('criativo')}
+                size="sm"
+              >
+                💡 Criativo (14)
+              </Button>
+              <Button
+                variant={selectedCategory === 'brasileiro' ? 'default' : 'outline'}
+                onClick={() => setSelectedCategory('brasileiro')}
+                size="sm"
+              >
+                🇧🇷 Brasil (5)
               </Button>
             </div>
 
