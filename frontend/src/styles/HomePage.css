@@ -341,6 +341,26 @@
   margin-bottom: 0.25rem;
 }
 
+.cinematic-item.critical {
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  padding: 1rem;
+}
+
+.cinematic-item.critical strong {
+  color: #92400e;
+}
+
+.cinematic-item.audio {
+  background: #dbeafe;
+  border-left: 4px solid #3b82f6;
+  padding: 1rem;
+}
+
+.cinematic-item.audio strong {
+  color: #1e40af;
+}
+
 /* Free Badge */
 .free-box {
   display: flex;
