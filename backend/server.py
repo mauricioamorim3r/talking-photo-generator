@@ -558,29 +558,52 @@ async def generate_video(request: GenerateVideoRequest):
         
         # Function to sanitize prompt for content policy
         def sanitize_prompt(prompt):
-            """Remove potentially problematic words that trigger content filters"""
+            """Remove ALL potentially problematic content that triggers FAL.AI filters"""
             import re
             
-            problematic_patterns = [
+            # STEP 1: Remove ALL mentions of facial fidelity/identity/preservation
+            # These trigger deepfake detection
+            fidelity_removal_patterns = [
+                r'\[Manter[^\]]*\]',  # Remove all [Manter...] blocks
+                r'\[.*?identidade.*?\]',  # Any block mentioning identity
+                r'\[.*?fidelidade.*?\]',  # Any block mentioning fidelity
+                r'\[.*?NÃO DEVEM.*?\]',  # Any block with NÃO DEVEM
+                r'\[.*?preserv.*?\]',  # Any block mentioning preserve
+                r'[Mm]anter.*?identidade.*?\.',  # Sentences about maintaining identity
+                r'[Pp]reserv.*?fidelidade.*?\.',  # Sentences about preserving fidelity
+                r'[Ee]xpressões faciais.*?fidelidade.*?\.',  # Facial expressions with fidelity
+                r'[Aa]s expressões faciais devem ser preservadas.*?\.',
+                r'com alta fidelidade',  # Remove "with high fidelity" mentions
+                r'devem ser preservadas',  # Remove "must be preserved"
+                r'alta fidelidade',  # Remove "high fidelity"
+            ]
+            
+            sanitized = prompt
+            for pattern in fidelity_removal_patterns:
+                sanitized = re.sub(pattern, '', sanitized, flags=re.IGNORECASE | re.DOTALL)
+            
+            # STEP 2: Remove violent/threatening words
+            word_replacements = [
                 (r'ameaçador(a|amente|es)?', 'impressionante'),
                 (r'assustador(a|es)?', 'surpreendente'),
                 (r'violento?(a|s)?', 'intenso'),
                 (r'afiado?(a|s)?', 'visível'),
-                (r'afiado?(a|s)?', 'proeminente'),
                 (r'ataca(r|ndo|m)?', 'aproxima'),
                 (r'ataque', 'aproximação'),
                 (r'medo', 'admiração'),
                 (r'terror', 'impacto'),
                 (r'pânico', 'intensidade'),
-                (r'sangue', 'cor vermelha'),
-                (r'mort(e|al|ais)?', 'drama'),
-                (r'agressiv(o|a|os|as|amente)?', 'energétic'),
                 (r'perigoso?(a|s)?', 'impressionante')
             ]
             
-            sanitized = prompt
-            for pattern, replacement in problematic_patterns:
+            for pattern, replacement in word_replacements:
                 sanitized = re.sub(pattern, replacement, sanitized, flags=re.IGNORECASE)
+            
+            # STEP 3: Clean up extra spaces and formatting
+            sanitized = re.sub(r'\s+', ' ', sanitized)  # Multiple spaces to single
+            sanitized = re.sub(r'\.\s*\.', '.', sanitized)  # Double periods
+            sanitized = re.sub(r'\s+([,.])', r'\1', sanitized)  # Space before punctuation
+            sanitized = sanitized.strip()
             
             return sanitized
         
@@ -590,8 +613,8 @@ async def generate_video(request: GenerateVideoRequest):
         
         if original_prompt != sanitized_prompt:
             logger.warning(f"⚠️ PROMPT SANITIZED!")
-            logger.warning(f"ORIGINAL: {original_prompt[:200]}")
-            logger.warning(f"SANITIZED: {sanitized_prompt[:200]}")
+            logger.warning(f"REMOVED {len(original_prompt) - len(sanitized_prompt)} characters")
+            logger.warning(f"CLEAN PROMPT: {sanitized_prompt[:300]}")
         else:
             logger.info(f"✅ Prompt clean: {sanitized_prompt[:100]}")
         
