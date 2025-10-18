@@ -714,7 +714,13 @@ class VideoGenAPITester:
 
 def main():
     tester = VideoGenAPITester()
-    success = tester.run_comprehensive_test()
+    
+    # Check if we should run FAL video generation tests specifically
+    if len(sys.argv) > 1 and sys.argv[1] == "fal":
+        success = tester.run_fal_video_generation_test()
+    else:
+        success = tester.run_comprehensive_test()
+    
     return 0 if success else 1
 
 if __name__ == "__main__":
