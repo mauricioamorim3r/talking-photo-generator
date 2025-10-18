@@ -569,13 +569,15 @@ async def generate_video(request: GenerateVideoRequest):
                 r'\[.*?fidelidade.*?\]',  # Any block mentioning fidelity
                 r'\[.*?NÃO DEVEM.*?\]',  # Any block with NÃO DEVEM
                 r'\[.*?preserv.*?\]',  # Any block mentioning preserve
-                r'[Mm]anter.*?identidade.*?\.',  # Sentences about maintaining identity
-                r'[Pp]reserv.*?fidelidade.*?\.',  # Sentences about preserving fidelity
-                r'[Ee]xpressões faciais.*?fidelidade.*?\.',  # Facial expressions with fidelity
-                r'[Aa]s expressões faciais devem ser preservadas.*?\.',
+                r'[Mm]anter.*?identidade[^.]*\.',  # Sentences about maintaining identity
+                r'[Pp]reserv.*?fidelidade[^.]*\.',  # Sentences about preserving fidelity
+                r'[^.]*?expressões faciais[^.]*?fidelidade[^.]*?\.',  # Any sentence with facial expressions + fidelity
+                r'[Aa]s expressões faciais devem ser preservadas[^.]*?\.',  # Specific phrase
                 r'com alta fidelidade',  # Remove "with high fidelity" mentions
-                r'devem ser preservadas',  # Remove "must be preserved"
-                r'alta fidelidade',  # Remove "high fidelity"
+                r'devem ser preservadas[^.]*?fidelidade[^.]*?',  # Must be preserved with fidelity
+                r'alta fidelidade[^.]*?',  # Remove "high fidelity"
+                r'[^.]*?preservadas com alta fidelidade[^.]*?\.',  # Preserved with high fidelity sentence
+                r'expressões faciais[^.]*?alta fidelidade[^.]*?\.',  # Facial expressions with high fidelity
             ]
             
             sanitized = prompt
