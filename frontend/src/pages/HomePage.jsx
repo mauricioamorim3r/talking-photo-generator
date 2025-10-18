@@ -484,7 +484,7 @@ const HomePage = () => {
                           {selectedMode === 'premium' ? (
                             <>
                               <SelectItem value="veo3">🏆 Veo 3.1 - Alta Qualidade ($0.20-0.40/seg)</SelectItem>
-                              <SelectItem value="sora2">⚡ Sora 2 - Custo-Benefício ($0.10/seg)</SelectItem>
+                              <SelectItem value="sora2">⚡ Sora 2 - Com Áudio Nativo ($0.10/seg)</SelectItem>
                               <SelectItem value="wav2lip">👄 Wav2lip - Sincronização Labial ($0.05/seg)</SelectItem>
                             </>
                           ) : (
