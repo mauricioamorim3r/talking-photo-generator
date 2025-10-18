@@ -78,7 +78,8 @@ class VideoGeneration(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     image_id: str
     audio_id: Optional[str] = None
-    model: Literal["veo3", "sora2", "wav2lip"]
+    model: Literal["veo3", "sora2", "wav2lip", "open-sora", "wav2lip-free"]
+    mode: Literal["premium", "economico"] = "premium"
     prompt: str
     duration: Optional[float] = None
     cost: float = 0.0
