@@ -201,7 +201,13 @@ const HomePage = () => {
     }
   };
 
-  useState(() => {
+  // Load voices on component mount
+  useEffect(() => {
+    fetchVoices();
+  }, []);
+
+  // Estimate cost when model, duration or audio changes
+  useEffect(() => {
     if (selectedModel && duration) {
       estimateCost();
     }
