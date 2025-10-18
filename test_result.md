@@ -364,3 +364,46 @@ agent_communication:
       TESTING LIMITATION: Full end-to-end image upload flow limited by Playwright constraints, but code analysis and backend API testing confirm correct implementation.
       
       FINAL STATUS: Frontend implementation is production-ready and correctly handles model-specific prompt generation for Sora 2 and Veo 3.
+  - agent: "main"
+    message: |
+      PHASE 2 IMPLEMENTATION COMPLETE - IMAGE GENERATION MODULE
+      
+      Changes Made:
+      1. Backend (server.py):
+         - Refined Sora 2 template with 7 layers: Scene, Subject, Physics & Materials, Cinematography, Lighting, Audio, Quality + Exclusions
+         - Refined Veo 3 template with professional structure: Action, Cinematic Shot, Lens & Focus, Lighting Design, Color Grading, Audio Design, Quality & Exclusions
+         - Added models: GeneratedImage, GenerateImageRequest
+         - New endpoint: POST /api/images/generate (Gemini 2.5 Flash Image / Nano Banana)
+         - New endpoint: GET /api/images/generated (list all generated images)
+         - New endpoint: DELETE /api/images/generated/{image_id}
+         - Uses emergentintegrations with send_message_multimodal_response
+         - Uploads to Cloudinary with fallback to base64
+         - Cost tracking: $0.039 per image
+         
+      2. Frontend:
+         - New page: ImageGeneratorPage.jsx at /image-generator
+         - Prompt Editor with quick action buttons (+ Lighting, + Quality, Anime Style)
+         - Prompt Library with 3 categories: Realistic, Anime, Editing (9 templates total)
+         - Real-time image generation with loading state
+         - Generated image preview with actions: Download, Generate Video, Delete
+         - Image history gallery with hover effects
+         - Navigation integration in HomePage (new "Gerar Imagens" button)
+         - Full responsive design
+         
+      3. Features:
+         - Generate images from text prompts using Nano Banana
+         - Pre-made prompt templates for inspiration
+         - Download generated images
+         - Use generated images to create videos (navigate to HomePage)
+         - Gallery of all generated images
+         - Delete images
+         - Cost tracking in Admin Panel
+         
+      TESTING NEEDED:
+      1. Test /api/images/generate endpoint with various prompts
+      2. Verify Gemini 2.5 Flash Image integration works
+      3. Test Cloudinary upload and fallback
+      4. Test frontend image generation flow
+      5. Test prompt library templates
+      6. Test image-to-video integration
+      7. Verify cost tracking in admin panel
