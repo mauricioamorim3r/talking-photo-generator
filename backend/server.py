@@ -216,18 +216,19 @@ Os modelos JÁ mantêm a imagem original automaticamente. Descreva apenas a AÇ�
 
 **Quando usar**: Cenas com física realista, movimento de personagens, ambientes detalhados
 
-**Estrutura do Prompt para Sora 2:**
+**Estrutura do Prompt para Sora 2 (7 Camadas):**
 ```
-[DESCRIÇÃO DO SUJEITO] + [AÇÃO PRINCIPAL] + [MOVIMENTO ESPECÍFICO].
-[COMPOSIÇÃO E ENQUADRAMENTO].
-[CINEMATOGRAFIA: tipo de plano, movimento de câmera, lente].
-[ILUMINAÇÃO E ATMOSFERA].
-[ESTILO VISUAL E QUALIDADE].
-[ÁUDIO: descrição detalhada dos sons - Sora 2 gera áudio nativo].
+1. [CENA E AMBIENTE]: ambiente, hora do dia, clima, atmosfera
+2. [SUJEITO E AÇÃO]: quem/o que está na cena, movimento principal, emoções, ritmo
+3. [PHYSICS & MATERIALS]: texturas, interações físicas, comportamento de materiais (tecido, pelo, água, poeira)
+4. [CINEMATOGRAFIA]: tipo de plano, movimento de câmera, lente, framing
+5. [ILUMINAÇÃO E COR]: fontes de luz, direção, mood, paleta de cores
+6. [ÁUDIO]: sons de fala, efeitos sonoros, ambiente, música (Sora 2 gera áudio nativo)
+7. [QUALIDADE + EXCLUSÕES]: resolução, estilo, texturas + sem watermarks/artifacts
 ```
 
-**Exemplo Sora 2:**
-"Um golden retriever correndo em um campo de flores silvestres, movendo-se com energia natural, orelhas balançando ao vento, língua para fora, expressão alegre. Enquadramento: medium shot transitando para wide shot. Câmera acompanha o movimento com dolly suave. Lente 50mm com shallow depth of field, foco no cachorro. Iluminação: golden hour com luz quente e suave, raios de sol filtrados. Estilo: filmado em 35mm, cinematic color grading, textura detalhada de pelo. Áudio: sons de passos na grama, respiração do cachorro, vento suave, pássaros ao fundo."
+**Exemplo Sora 2 Refinado:**
+"Campo de flores silvestres ao amanhecer, névoa leve sobre o solo, atmosfera serena e mágica. Golden retriever correndo com energia natural, orelhas balançando ao vento, língua para fora, expressão alegre, patas tocando o solo com movimento rítmico. Física realista: pelo texturizado movendo-se com o vento, flores balançando suavemente, gotas de orvalho visíveis nas pétalas. Medium shot transitando para wide shot, câmera acompanha o movimento com dolly suave lateral. Lente 50mm com shallow depth of field, foco no cachorro. Iluminação golden hour: luz quente e suave lateral, raios de sol filtrados através das flores criando lens flare natural, sombras longas. Paleta: tons âmbar e verdes vibrantes. Áudio sincronizado: sons rítmicos de patas na grama, respiração energética do cachorro, vento suave rustling nas flores, pássaros cantando ao fundo. Filmado em 35mm, cinematic color grading, 4K, texturas ultra-detalhadas de pelo e vegetação. Sem watermarks, sem text overlays, sem artifacts digitais."
 
 ---
 
