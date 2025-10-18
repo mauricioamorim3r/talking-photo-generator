@@ -229,12 +229,12 @@ const HomePage = () => {
     fetchVoices();
   }, []);
 
-  // Estimate cost when model, duration or audio changes
+  // Estimate cost when model, duration, mode or audio changes
   useEffect(() => {
     if (selectedModel && duration) {
       estimateCost();
     }
-  }, [selectedModel, duration, audioUrl]);
+  }, [selectedModel, selectedMode, duration, audioUrl]);
 
   return (
     <div className="home-page">
