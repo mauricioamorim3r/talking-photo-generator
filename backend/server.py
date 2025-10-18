@@ -523,6 +523,12 @@ async def estimate_cost(request: EstimateCostRequest):
         logger.error(f"Error estimating cost: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/video/test-prompt")
+async def test_prompt(request: dict):
+    """Test endpoint to see what prompt is received"""
+    logger.info(f"🔍 TEST PROMPT RECEIVED: {request.get('prompt', 'NO PROMPT')}")
+    return {"received_prompt": request.get('prompt', 'NO PROMPT')}
+
 @api_router.post("/video/generate")
 async def generate_video(request: GenerateVideoRequest):
     """Generate video with selected model (Premium or Econômico)"""
