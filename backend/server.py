@@ -206,12 +206,13 @@ USE palavras neutras: impressionante, surpreendente, dramático, intenso, admir�
 
 1. **Assunto Principal e Ação**
    - Sujeito(s): Descrever em detalhes (Ex: "Um husky siberiano de olhos azuis")
-   - Ação Principal: O que está fazendo (Ex: "Olhando para a câmera", "reagindo com medo")
+   - Ação Principal: O que está fazendo (Ex: "Olhando para a câmera", "reagindo")
    - Ação Específica (Falar/Gritar): Movimento da boca (Ex: "Começa a falar", "lábios se movem em sincronia")
    - Movimento Sutil/Ambiente: Detalhes secundários (Ex: "Piscando lentamente", "vento no cabelo", "poeira subindo")
 
-2. **Fidelidade do Sujeito (CRÍTICO para pessoas/animais):**
-   [Manter a identidade facial EXATA e a semelhança de todas as pessoas/animais da imagem original. Os rostos e características NÃO DEVEM ser alterados, distorcidos ou substituídos. A animação (fala, expressão) deve ser aplicada SOBRE os rostos originais, preservando 100% da fidelidade facial e características físicas.]
+2. **NOTA SOBRE FIDELIDADE FACIAL:**
+   ⚠️ NÃO inclua instruções explícitas sobre "não alterar rostos" ou "preservar identidade" - isso pode ser interpretado como tentativa de deepfake e será bloqueado.
+   Os modelos Veo3 e Sora2 já preservam automaticamente a imagem original. Basta descrever a ação desejada.
 
 3. **Cinematografia**
    - Tipo de Plano: [Plano Médio/Medium Shot], [Close-up], [Plano Aberto/Wide Shot]
