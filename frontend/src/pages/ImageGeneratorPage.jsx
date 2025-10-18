@@ -141,6 +141,19 @@ function ImageGeneratorPage() {
   return (
     <div className="image-generator-page">
       <div className="page-header">
+        <div className="navigation-buttons">
+          <Button variant="outline" onClick={() => navigate('/')}>
+            <Video className="w-4 h-4 mr-2" />
+            Vídeos
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/gallery')}>
+            <Grid className="w-4 h-4 mr-2" />
+            Galeria
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/admin')}>
+            Admin
+          </Button>
+        </div>
         <h1>
           <ImageIcon className="header-icon" />
           Gerador de Imagens AI
