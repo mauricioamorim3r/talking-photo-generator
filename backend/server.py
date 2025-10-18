@@ -194,7 +194,6 @@ async def serve_image(filename: str):
         if not file_path.exists():
             raise HTTPException(status_code=404, detail="Image not found")
         
-        from fastapi.responses import FileResponse
         return FileResponse(file_path)
     except Exception as e:
         logger.error(f"Error serving image: {str(e)}")
