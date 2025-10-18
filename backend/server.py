@@ -113,13 +113,16 @@ class GenerateAudioRequest(BaseModel):
 
 class GenerateVideoRequest(BaseModel):
     image_url: str
-    model: Literal["veo3", "sora2", "wav2lip"]
+    model: Literal["veo3", "sora2", "wav2lip", "open-sora", "wav2lip-free"]
+    mode: Literal["premium", "economico"] = "premium"
     prompt: str
     audio_url: Optional[str] = None
     duration: Optional[int] = 5
+    cinematic_settings: Optional[dict] = None
 
 class EstimateCostRequest(BaseModel):
-    model: Literal["veo3", "sora2", "wav2lip"]
+    model: Literal["veo3", "sora2", "wav2lip", "open-sora", "wav2lip-free"]
+    mode: Literal["premium", "economico"] = "premium"
     duration: int
     with_audio: bool = False
 
