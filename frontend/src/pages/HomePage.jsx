@@ -146,9 +146,17 @@ const HomePage = () => {
 
   const applyCinematicPrompt = () => {
     if (selectedMode === 'premium') {
-      setPrompt(analysis.full_prompt_premium || '');
+      // Use model-specific prompt
+      if (selectedModel === 'sora2') {
+        setPrompt(analysis.prompt_sora2 || '');
+      } else if (selectedModel === 'veo3') {
+        setPrompt(analysis.prompt_veo3 || '');
+      } else {
+        // wav2lip or other
+        setPrompt(analysis.prompt_veo3 || '');
+      }
     } else {
-      setPrompt(analysis.full_prompt_economico || '');
+      setPrompt(analysis.prompt_economico || '');
     }
     toast.success('Prompt cinematográfico aplicado!');
   };
