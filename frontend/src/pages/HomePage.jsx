@@ -568,6 +568,11 @@ const HomePage = () => {
                         rows={6}
                         data-testid="prompt-textarea"
                       />
+                      {selectedModel === 'sora2' && (
+                        <p className="model-info">
+                          ℹ️ Sora 2 gera áudio automaticamente sincronizado com o vídeo
+                        </p>
+                      )}
                     </div>
 
                     {selectedMode === 'premium' && estimatedCost > 0 && (
@@ -587,10 +592,17 @@ const HomePage = () => {
                     <Button 
                       className="w-full" 
                       size="lg"
-                      onClick={() => setStep(3)}
+                      onClick={() => {
+                        // Se for Sora 2, pular etapa de áudio (já gera nativo)
+                        if (selectedModel === 'sora2') {
+                          generateVideo();
+                        } else {
+                          setStep(3);
+                        }
+                      }}
                       data-testid="continue-to-audio-button"
                     >
-                      Continuar
+                      {selectedModel === 'sora2' ? 'Gerar Vídeo com Áudio' : 'Continuar'}
                     </Button>
                   </CardContent>
                 </Card>
