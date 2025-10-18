@@ -381,6 +381,57 @@ const HomePage = () => {
                     <CardTitle>Configuração do Vídeo</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {/* Mode Selector */}
+                    <div>
+                      <label className="label">Modo de Geração</label>
+                      <div className="mode-selector">
+                        <button
+                          className={`mode-button ${selectedMode === 'premium' ? 'active premium' : ''}`}
+                          onClick={() => {
+                            setSelectedMode('premium');
+                            setSelectedModel('veo3');
+                            if (analysis) {
+                              setPrompt(analysis.full_prompt_premium || '');
+                            }
+                          }}
+                          data-testid="premium-mode-button"
+                        >
+                          <Crown className="w-5 h-5" />
+                          <div>
+                            <div className="mode-title">Premium</div>
+                            <div className="mode-subtitle">Melhor qualidade</div>
+                          </div>
+                        </button>
+                        <button
+                          className={`mode-button ${selectedMode === 'economico' ? 'active economico' : ''}`}
+                          onClick={() => {
+                            setSelectedMode('economico');
+                            setSelectedModel('open-sora');
+                            if (analysis) {
+                              setPrompt(analysis.full_prompt_economico || '');
+                            }
+                          }}
+                          data-testid="economico-mode-button"
+                        >
+                          <Zap className="w-5 h-5" />
+                          <div>
+                            <div className="mode-title">Econômico</div>
+                            <div className="mode-subtitle">100% Gratuito</div>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Warning for Economico mode */}
+                    {selectedMode === 'economico' && (
+                      <Alert className="economico-warning">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          <strong>Modo Econômico:</strong> Modelos gratuitos via HuggingFace. Pode haver fila de processamento e qualidade pode ser inferior ao Premium.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
                     <div>
                       <label className="label">Modelo de IA</label>
                       <Select value={selectedModel} onValueChange={setSelectedModel}>
@@ -388,9 +439,18 @@ const HomePage = () => {
                           <SelectValue placeholder="Escolha um modelo" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="veo3">Veo 3 - Alta Qualidade</SelectItem>
-                          <SelectItem value="sora2">Sora 2 - Custo-Benefício</SelectItem>
-                          <SelectItem value="wav2lip">Wav2lip - Sincronização Labial</SelectItem>
+                          {selectedMode === 'premium' ? (
+                            <>
+                              <SelectItem value="veo3">🏆 Veo 3.1 - Alta Qualidade ($0.20-0.40/seg)</SelectItem>
+                              <SelectItem value="sora2">⚡ Sora 2 - Custo-Benefício ($0.10/seg)</SelectItem>
+                              <SelectItem value="wav2lip">👄 Wav2lip - Sincronização Labial ($0.05/seg)</SelectItem>
+                            </>
+                          ) : (
+                            <>
+                              <SelectItem value="open-sora">🆓 Open-Sora v2 - Gratuito</SelectItem>
+                              <SelectItem value="wav2lip-free">👄 Wav2lip Free - Gratuito</SelectItem>
+                            </>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
@@ -407,21 +467,78 @@ const HomePage = () => {
                       />
                     </div>
 
+                    {/* Cinematic Prompt Section */}
+                    {analysis && analysis.cinematic_prompt && (
+                      <div className="cinematic-section">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowCinematicPrompt(!showCinematicPrompt)}
+                          data-testid="toggle-cinematic-button"
+                        >
+                          <Wand2 className="w-4 h-4 mr-2" />
+                          {showCinematicPrompt ? 'Ocultar' : 'Ver'} Sugestões Cinematográficas
+                        </Button>
+                        
+                        {showCinematicPrompt && (
+                          <div className="cinematic-prompts" data-testid="cinematic-prompts">
+                            <h5>Elementos Cinematográficos:</h5>
+                            <div className="cinematic-item">
+                              <strong>Assunto e Ação:</strong> {analysis.cinematic_prompt.subject_action}
+                            </div>
+                            <div className="cinematic-item">
+                              <strong>Tipo de Plano:</strong> {analysis.cinematic_prompt.camera_shot}
+                            </div>
+                            <div className="cinematic-item">
+                              <strong>Movimento:</strong> {analysis.cinematic_prompt.camera_movement}
+                            </div>
+                            <div className="cinematic-item">
+                              <strong>Iluminação:</strong> {analysis.cinematic_prompt.lighting}
+                            </div>
+                            <div className="cinematic-item">
+                              <strong>Lente:</strong> {analysis.cinematic_prompt.lens}
+                            </div>
+                            <div className="cinematic-item">
+                              <strong>Estilo de Cor:</strong> {analysis.cinematic_prompt.color_style}
+                            </div>
+                            <div className="cinematic-item">
+                              <strong>Qualidade:</strong> {analysis.cinematic_prompt.quality}
+                            </div>
+                            <Button 
+                              size="sm" 
+                              onClick={applyCinematicPrompt}
+                              className="mt-3"
+                              data-testid="apply-cinematic-button"
+                            >
+                              Aplicar Prompt Completo
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <div>
                       <label className="label">Prompt do Vídeo</label>
                       <Textarea
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder="Descreva como quer animar a imagem..."
-                        rows={4}
+                        rows={6}
                         data-testid="prompt-textarea"
                       />
                     </div>
 
-                    {estimatedCost > 0 && (
+                    {selectedMode === 'premium' && estimatedCost > 0 && (
                       <div className="cost-box" data-testid="cost-estimate">
                         <DollarSign className="w-5 h-5" />
                         <span>Custo Estimado: ${estimatedCost.toFixed(2)}</span>
+                      </div>
+                    )}
+
+                    {selectedMode === 'economico' && (
+                      <div className="free-box" data-testid="free-badge">
+                        <Zap className="w-5 h-5" />
+                        <span>100% GRATUITO</span>
                       </div>
                     )}
 
