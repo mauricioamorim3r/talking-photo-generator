@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Lock, DollarSign, TrendingUp, Activity, ArrowLeft } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Lock, DollarSign, TrendingUp, Activity, ArrowLeft, Edit, Save, X } from 'lucide-react';
 import axios from 'axios';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -16,6 +16,8 @@ const AdminPanel = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [usageData, setUsageData] = useState(null);
+  const [editingBalance, setEditingBalance] = useState(null);
+  const [newBalance, setNewBalance] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
