@@ -234,21 +234,21 @@ Os modelos JÁ mantêm a imagem original automaticamente. Descreva apenas a AÇ�
 
 ## 📽️ TEMPLATE ESPECÍFICO PARA VEO 3
 
-**Quando usar**: Produção de alta qualidade cinematográfica, áudio sincronizado complexo, motion realism
+**Quando usar**: Produção cinematográfica de alta qualidade, áudio sincronizado complexo, motion realism extremo
 
-**Estrutura do Prompt para Veo 3:**
+**Estrutura do Prompt para Veo 3 (Profissional):**
 ```
-[AÇÃO E MOVIMENTO DETALHADO DO SUJEITO].
-[CINEMATIC SHOT: tipo de plano + movimento de câmera].
-[LENTE E FOCO: especificações técnicas].
-[LIGHTING DESIGN: setup de iluminação detalhado].
-[COLOR GRADING: paleta de cores e mood].
-[AUDIO DESIGN: ambiente sonoro completo - Veo 3 tem síntese de áudio avançada].
-[QUALIDADE: resolução, texturas, estilo de filmagem].
+1. [AÇÃO PRINCIPAL]: movimento detalhado e específico do sujeito, timing, transições
+2. [CINEMATIC SHOT]: tipo de plano profissional + movimento de câmera técnico
+3. [LENTE E FOCO]: especificações exatas (focal length, aperture, depth of field)
+4. [LIGHTING DESIGN]: setup de iluminação profissional (key, fill, rim, bounce)
+5. [COLOR GRADING]: paleta cinematográfica específica, mood, look references
+6. [AUDIO DESIGN]: camadas de som ambiente, foley, música, sincronização precisa
+7. [QUALIDADE & EXCLUSÕES]: hyper-realistic, resolução 4K/8K, estilo de filmagem + sem distrações
 ```
 
-**Exemplo Veo 3:**
-"Mulher de cabelos longos virando a cabeça lentamente para a câmera, sorriso surgindo gradualmente, olhos brilhando com luz refletida, cabelo movendo-se naturalmente com o giro. Close-up cinematográfico, câmera estática com rack focus suave do fundo para o rosto. Shot em lente 85mm f/1.4, bokeh cremoso no background. Three-point lighting: key light suave de 45°, fill light sutil, rim light destacando o cabelo. Color grading: tons quentes com teal nos shadows, look cinematográfico de filme profissional. Audio design: som ambiente suave de café, leve movimento de roupa, respiração natural, música instrumental sutil ao fundo. Hyper-realistic 4K, textura de pele detalhada, filmado em estilo de comercial high-end."
+**Exemplo Veo 3 Refinado:**
+"Mulher de cabelos longos virando a cabeça lentamente em 3 segundos para a câmera, sorriso surgindo gradualmente frame by frame, olhos brilhando com luz refletida, cabelo fluindo naturalmente com movimento suave e orgânico, micro-expressões faciais detalhadas. Close-up cinematográfico, câmera estática em tripod profissional com rack focus suave transicionando do fundo desfocado para o rosto nítido. Shot com lente prime 85mm f/1.4, bokeh cremoso hexagonal no background, shallow depth of field isolando o sujeito. Three-point lighting setup: key light LED suave de 45° criando sombras naturais, fill light difuso reduzindo contraste, rim light backlight destacando o contorno do cabelo com halo sutil. Color grading cinematográfico: tons quentes (amber/gold) nas highlights, teal frio nos shadows, contraste médio, saturação controlada, look de filme comercial premium. Audio design em camadas: ambiente suave de café com conversas distantes a 20%, som sutil de movimento de roupa, respiração natural baixa, música instrumental melancólica de piano ao fundo, tudo sincronizado com o movimento. Hyper-realistic 4K, textura de pele ultra-detalhada com poros visíveis, cabelo com strand definition, filmado em estilo de luxury commercial high-end production. Sem watermarks, sem lower thirds, sem lens flares excessivos, color grading consistente."
 
 ---
 
