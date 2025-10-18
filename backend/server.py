@@ -654,16 +654,39 @@ async def generate_video(request: GenerateVideoRequest):
     except Exception as e:
         logger.error(f"Error generating video: {str(e)}")
         
+        # Check if it's a content policy violation
+        error_message = str(e)
+        if 'content_policy_violation' in error_message or 'content checker' in error_message:
+            friendly_message = """⚠️ Política de Conteúdo: O prompt contém termos que foram bloqueados pela política de conteúdo da IA.
+
+Dicas para resolver:
+• Evite palavras como: ameaçador, violento, ataque, sangue, armas
+• Use palavras neutras: impressionante, surpreendente, dramático
+• Foque na descrição visual sem conotação violenta
+
+Exemplo: Em vez de "T-Rex ameaçador rugindo", use "T-Rex impressionante com boca aberta"."""
+            error_code = "CONTENT_POLICY"
+        else:
+            friendly_message = f"Erro ao gerar vídeo: {error_message}"
+            error_code = "GENERATION_ERROR"
+        
         # Update record with error
         await db.video_generations.update_one(
             {"id": video_id},
             {"$set": {
                 "status": "failed",
-                "error": str(e)
+                "error": error_message
             }}
         )
         
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=422 if error_code == "CONTENT_POLICY" else 500,
+            detail={
+                "error_code": error_code,
+                "message": friendly_message,
+                "original_error": error_message if error_code != "CONTENT_POLICY" else None
+            }
+        )
 
 @api_router.post("/auth/verify")
 async def verify_password(request: VerifyPasswordRequest):
