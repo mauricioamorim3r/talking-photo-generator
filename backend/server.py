@@ -358,8 +358,28 @@ CORRETO: "T-Rex impressionante e majestoso abrindo a boca mostrando dentes, rugi
                 if not isinstance(text, str):
                     return text
                 cleaned = text
+                
+                # Remove problematic words
                 for word, replacement in problematic_words.items():
                     cleaned = cleaned.replace(word, replacement)
+                
+                # Remove facial fidelity instructions (triggers deepfake detection)
+                import re
+                fidelity_patterns = [
+                    r'\[Manter a identidade facial.*?\]',
+                    r'\[.*?NÃO DEVEM ser alterados.*?\]',
+                    r'\[.*?preservando 100%.*?\]',
+                    r'Manter a identidade facial.*?características físicas\.',
+                    r'Os rostos.*?NÃO DEVEM.*?substituídos\.',
+                    r'preservando 100% da fidelidade.*?\.'
+                ]
+                
+                for pattern in fidelity_patterns:
+                    cleaned = re.sub(pattern, '', cleaned, flags=re.IGNORECASE | re.DOTALL)
+                
+                # Clean up extra spaces
+                cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+                
                 return cleaned
             
             def clean_dict(d):
