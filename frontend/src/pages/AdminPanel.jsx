@@ -53,6 +53,30 @@ const AdminPanel = () => {
     }
   };
 
+  const handleUpdateBalance = async (service) => {
+    if (!newBalance || isNaN(parseFloat(newBalance))) {
+      toast.error('Digite um valor válido');
+      return;
+    }
+
+    try {
+      const response = await axios.post(`${API}/tokens/balance`, {
+        service: service,
+        initial_balance: parseFloat(newBalance)
+      });
+
+      if (response.data.success) {
+        toast.success('Saldo atualizado com sucesso!');
+        setEditingBalance(null);
+        setNewBalance('');
+        fetchUsageData();
+      }
+    } catch (error) {
+      console.error('Error updating balance:', error);
+      toast.error('Erro ao atualizar saldo');
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="admin-login">
