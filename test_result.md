@@ -101,3 +101,108 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: |
+  Video and audio generation app from images using Gemini for analysis, Fal.ai (Veo 3, Sora 2, Wav2Lip) and HuggingFace for video generation, and ElevenLabs for audio. 
+  Admin panel for API usage/costs tracking. Gallery for generated content management.
+  Recent task: Integrate model-specific prompt templates for Sora 2 and Veo 3 from Fal.ai documentation while ensuring strict content policy compliance (no facial fidelity mentions).
+
+backend:
+  - task: "Model-specific prompt generation (Sora 2 & Veo 3)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          Implemented new model-specific prompt templates in Gemini system message:
+          - Sora 2 template: Focuses on physics realism, character consistency, detailed environments
+          - Veo 3 template: Focuses on cinematic quality, advanced audio synthesis, motion realism
+          - Removed ALL references to facial fidelity/identity preservation from system prompt
+          - Updated JSON response structure: prompt_sora2, prompt_veo3, prompt_economico, cinematic_details
+          - Updated timeout fallback to match new structure
+          - Kept aggressive sanitization as safety net
+
+  - task: "Prompt sanitization for content policy compliance"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          Sanitization logic updated:
+          - Removes facial fidelity instructions (lines 560-610, 367-432)
+          - Replaces problematic words (violent, threatening, etc.)
+          - Processes all prompts in analysis data recursively
+          - Safety net in case Gemini still generates problematic phrases
+
+frontend:
+  - task: "Display model-specific prompts"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/HomePage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          Updated HomePage.jsx to handle new prompt structure:
+          - Image analysis now sets prompt based on model (sora2 -> prompt_sora2, veo3 -> prompt_veo3)
+          - Mode selector (Premium/Economico) updates prompt for recommended model
+          - Model selector updates prompt when user changes model manually
+          - applyCinematicPrompt() uses model-specific prompts
+          - Cinematic details display uses new cinematic_details structure
+          - Removed facial_fidelity field display
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Model-specific prompt generation (Sora 2 & Veo 3)"
+    - "Prompt sanitization for content policy compliance"
+    - "Display model-specific prompts"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      IMPLEMENTATION COMPLETE - Ready for Backend Testing
+      
+      Changes Made:
+      1. Backend (server.py):
+         - Updated Gemini system prompt with model-specific templates (Sora 2 vs Veo 3)
+         - Added explicit warnings against facial fidelity mentions
+         - New JSON structure: prompt_sora2, prompt_veo3, prompt_economico, cinematic_details
+         - Maintained aggressive sanitization as safety net
+         
+      2. Frontend (HomePage.jsx):
+         - Updated to use new prompt fields based on selected model
+         - Mode selector and model selector update prompts dynamically
+         - Cinematic details display updated to new structure
+         
+      TESTING NEEDED:
+      1. Test /api/images/analyze endpoint with various images
+      2. Verify Gemini returns correct JSON structure
+      3. Confirm prompts are model-specific (different for Sora 2 vs Veo 3)
+      4. Ensure NO facial fidelity mentions in generated prompts
+      5. Test that sanitization catches any edge cases
+      6. Test /api/video/generate with sanitized prompts
+      7. Verify no content policy violations from Fal.ai
+      
+      Key API keys needed: EMERGENT_LLM_KEY, FAL_KEY, ELEVENLABS_KEY, Cloudinary credentials
