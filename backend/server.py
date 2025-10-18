@@ -543,7 +543,7 @@ async def generate_video(request: GenerateVideoRequest):
                     "fal-ai/veo3.1/image-to-video",
                     arguments={
                         "image_url": request.image_url,
-                        "prompt": request.prompt,
+                        "prompt": sanitized_prompt,  # Use sanitized prompt
                         "duration": request.duration
                     }
                 )
@@ -559,7 +559,7 @@ async def generate_video(request: GenerateVideoRequest):
                     "fal-ai/sora-2/image-to-video",
                     arguments={
                         "image_url": request.image_url,
-                        "prompt": request.prompt
+                        "prompt": sanitized_prompt  # Use sanitized prompt
                     }
                 )
                 # Run in executor to avoid blocking
