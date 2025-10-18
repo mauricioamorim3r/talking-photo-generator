@@ -72,7 +72,7 @@ def test_veo3():
             arguments={
                 "image_url": "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400",
                 "prompt": "Cat turning head slowly, cinematic close-up",
-                "duration": 5
+                "duration": "8s"  # Veo 3 only accepts "8s"
             }
         )
         
