@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Upload, Camera, Sparkles, Video, Mic, Loader2, Download, DollarSign, Play } from 'lucide-react';
 import axios from 'axios';
 import Webcam from 'react-webcam';
