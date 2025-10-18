@@ -254,10 +254,15 @@ Responda em formato JSON:
     "audio_instruction": "Descrição detalhada do áudio (para Veo3/Sora2)",
     "quality": "Qualidade e estilo"
   },
-  "full_prompt_premium": "Prompt COMPLETO seguindo TODO o template acima para Veo3/Sora2 - incluindo fidelidade facial e áudio detalhado",
+  "full_prompt_premium": "Prompt COMPLETO seguindo TODO o template acima para Veo3/Sora2 - incluindo fidelidade facial e áudio detalhado. LEMBRE-SE: Use palavras neutras (impressionante, dramático, majestoso) em vez de violentas (ameaçador, agressivo, ataque)",
   "full_prompt_economico": "Prompt simplificado para modelos gratuitos",
   "tips": "Dicas adicionais"
-}"""
+}
+
+EXEMPLO PRÁTICO DE PROMPT CORRETO (T-Rex):
+ERRADO: "T-Rex ameaçador com dentes afiados rugindo violentamente, atacando com movimentos agressivos"
+CORRETO: "T-Rex impressionante e majestoso abrindo a boca mostrando dentes, rugindo de forma dramática, se movendo com presença imponente. [Áudio: Rugido profundo e impactante]. Medium shot, dramatic lighting, 4K"
+"""
         ).with_model("gemini", "gemini-2.0-flash")
         
         image_file = FileContentWithMimeType(
