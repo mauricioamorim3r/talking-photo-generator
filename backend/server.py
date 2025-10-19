@@ -167,10 +167,11 @@ async def upload_image(file: UploadFile = File(...)):
     try:
         contents = await file.read()
         
-        # Upload to Cloudinary
+        # Upload to Cloudinary with resource_type auto
         result = cloudinary.uploader.upload(
             contents,
-            folder="video-gen"
+            folder="video-gen",
+            resource_type="auto"
         )
         
         return {
