@@ -167,11 +167,12 @@ async def upload_image(file: UploadFile = File(...)):
     try:
         contents = await file.read()
         
-        # Upload to Cloudinary with resource_type auto
+        # Upload to Cloudinary with signed upload (uses api_key and api_secret)
         result = cloudinary.uploader.upload(
             contents,
             folder="video-gen",
-            resource_type="auto"
+            resource_type="auto",
+            type="upload"  # Explicitly use signed upload
         )
         
         return {
