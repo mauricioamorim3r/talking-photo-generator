@@ -5,11 +5,11 @@ services:
     runtime: python
     region: oregon
     plan: free
-    buildCommand: cd backend && pip install -r requirements.txt
+    buildCommand: ./build.sh
     startCommand: cd backend && uvicorn server:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
-        value: 3.10.0
+        value: "3.10.0"
       - key: GEMINI_KEY
         sync: false
       - key: ELEVENLABS_API_KEY
@@ -31,24 +31,13 @@ services:
     region: oregon
     plan: free
     buildCommand: cd frontend && npm install --legacy-peer-deps && npm run build
-    staticPublishPath: ./frontend/build
     envVars:
       - key: NODE_VERSION
         value: 18.17.0
       - key: REACT_APP_API_URL
         value: https://talking-photo-backend.onrender.com
-    headers:
-      - path: /*
-        name: X-Frame-Options
-        value: SAMEORIGIN
-      - path: /*
-        name: X-Content-Type-Options
-        value: nosniff
-      - path: /static/*
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
 
-databases:
+databases: []
   # SQLite database will be in persistent disk
   # Note: Render free tier doesn't support persistent disk
   # Database will reset on each deploy
