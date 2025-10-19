@@ -481,9 +481,11 @@ Retorne EXATAMENTE este JSON:
         # Sanitize the analysis data
         analysis_data = sanitize_analysis_prompts(analysis_data)
 
-        # Save to database
+        # Save to database (use base64 placeholder if no URL)
+        image_url_for_db = request.image_url or "base64://uploaded_image"
+        
         analysis = ImageAnalysis(
-            image_url=request.image_url,
+            image_url=image_url_for_db,
             analysis=json.dumps(analysis_data),
             suggested_model=analysis_data.get('recommended_model_premium', 'veo3')
         )
