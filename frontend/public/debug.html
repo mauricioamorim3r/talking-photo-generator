@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Debug - Foto Video Fantasia</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        h1 { text-align: center; margin-bottom: 30px; }
+        .test-section {
+            background: rgba(255,255,255,0.15);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .test-section h2 {
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status.success { background: #10b981; }
+        .status.error { background: #ef4444; }
+        .status.loading { background: #f59e0b; }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        pre {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Debug - Foto Video Fantasia</h1>
+        
+        <div class="test-section">
+            <h2>
+                📡 1. Teste de Conectividade Backend
+                <span id="status-backend" class="status loading">TESTANDO...</span>
+            </h2>
+            <button onclick="testBackend()">Testar Backend</button>
+            <div id="result-backend" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>
+                🎤 2. Teste de API de Vozes
+                <span id="status-voices" class="status loading">AGUARDANDO...</span>
+            </h2>
+            <button onclick="testVoices()">Testar Vozes</button>
+            <div id="result-voices" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>
+                📸 3. Teste de Upload de Imagem
+                <span id="status-upload" class="status loading">AGUARDANDO...</span>
+            </h2>
+            <input type="file" id="fileInput" accept="image/*" style="margin: 10px 0;">
+            <button onclick="testUpload()">Fazer Upload</button>
+            <div id="result-upload" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>
+                📊 4. Teste de Galeria
+                <span id="status-gallery" class="status loading">AGUARDANDO...</span>
+            </h2>
+            <button onclick="testGallery()">Testar Galeria</button>
+            <div id="result-gallery" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>
+                🌐 5. Informações do Ambiente
+            </h2>
+            <pre id="env-info"></pre>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://gerador-fantasia.onrender.com';
+        const API = BACKEND_URL + '/api';
+
+        // Mostrar informações do ambiente
+        document.getElementById('env-info').textContent = JSON.stringify({
+            'Frontend URL': window.location.origin,
+            'Backend URL': BACKEND_URL,
+            'User Agent': navigator.userAgent,
+            'Screen': `${window.screen.width}x${window.screen.height}`,
+            'Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone
+        }, null, 2);
+
+        // Auto-test backend on load
+        window.addEventListener('load', () => {
+            testBackend();
+        });
+
+        async function testBackend() {
+            const status = document.getElementById('status-backend');
+            const result = document.getElementById('result-backend');
+            
+            status.className = 'status loading';
+            status.textContent = 'TESTANDO...';
+            result.style.display = 'block';
+            result.innerHTML = '<p>⏳ Conectando ao backend...</p>';
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    status.className = 'status success';
+                    status.textContent = 'ONLINE ✓';
+                    result.innerHTML = `
+                        <p>✅ <strong>Backend respondendo!</strong></p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    throw new Error(`Status ${response.status}`);
+                }
+            } catch (error) {
+                status.className = 'status error';
+                status.textContent = 'ERRO ✗';
+                result.innerHTML = `
+                    <p>❌ <strong>Erro ao conectar:</strong></p>
+                    <p>${error.message}</p>
+                    <p><em>O backend pode estar hibernando. Aguarde 60 segundos e tente novamente.</em></p>
+                `;
+            }
+        }
+
+        async function testVoices() {
+            const status = document.getElementById('status-voices');
+            const result = document.getElementById('result-voices');
+            
+            status.className = 'status loading';
+            status.textContent = 'CARREGANDO...';
+            result.style.display = 'block';
+            result.innerHTML = '<p>⏳ Buscando vozes...</p>';
+
+            try {
+                const response = await fetch(`${API}/audio/voices`);
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    const ptVoices = data.voices.filter(v => v.labels?.language === 'pt');
+                    status.className = 'status success';
+                    status.textContent = `${data.voices.length} VOZES ✓`;
+                    result.innerHTML = `
+                        <p>✅ <strong>${data.voices.length} vozes disponíveis</strong></p>
+                        <p>📢 Vozes em Português: ${ptVoices.length}</p>
+                        <details>
+                            <summary>Ver primeiras 5 vozes PT</summary>
+                            <pre>${JSON.stringify(ptVoices.slice(0, 5), null, 2)}</pre>
+                        </details>
+                    `;
+                } else {
+                    throw new Error('Falha ao buscar vozes');
+                }
+            } catch (error) {
+                status.className = 'status error';
+                status.textContent = 'ERRO ✗';
+                result.innerHTML = `<p>❌ ${error.message}</p>`;
+            }
+        }
+
+        async function testUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const status = document.getElementById('status-upload');
+            const result = document.getElementById('result-upload');
+            
+            if (!fileInput.files.length) {
+                alert('Selecione uma imagem primeiro!');
+                return;
+            }
+
+            status.className = 'status loading';
+            status.textContent = 'ENVIANDO...';
+            result.style.display = 'block';
+            result.innerHTML = '<p>⏳ Fazendo upload...</p>';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+
+                const response = await fetch(`${API}/images/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    status.className = 'status success';
+                    status.textContent = 'SUCESSO ✓';
+                    result.innerHTML = `
+                        <p>✅ <strong>Upload realizado!</strong></p>
+                        <p>URL: <a href="${data.image_url}" target="_blank">${data.image_url}</a></p>
+                        <img src="${data.image_url}" style="max-width: 300px; border-radius: 8px; margin-top: 10px;">
+                    `;
+                } else {
+                    throw new Error(data.message || 'Erro no upload');
+                }
+            } catch (error) {
+                status.className = 'status error';
+                status.textContent = 'ERRO ✗';
+                result.innerHTML = `<p>❌ ${error.message}</p>`;
+            }
+        }
+
+        async function testGallery() {
+            const status = document.getElementById('status-gallery');
+            const result = document.getElementById('result-gallery');
+            
+            status.className = 'status loading';
+            status.textContent = 'CARREGANDO...';
+            result.style.display = 'block';
+            result.innerHTML = '<p>⏳ Buscando itens da galeria...</p>';
+
+            try {
+                const response = await fetch(`${API}/gallery/items`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    status.className = 'status success';
+                    status.textContent = `${data.items?.length || 0} ITENS ✓`;
+                    result.innerHTML = `
+                        <p>✅ <strong>Galeria acessível!</strong></p>
+                        <p>Itens encontrados: ${data.items?.length || 0}</p>
+                        ${data.items?.length > 0 ? `<pre>${JSON.stringify(data.items[0], null, 2)}</pre>` : '<p><em>Nenhum item na galeria ainda.</em></p>'}
+                    `;
+                } else {
+                    throw new Error(`Status ${response.status}`);
+                }
+            } catch (error) {
+                status.className = 'status error';
+                status.textContent = 'ERRO ✗';
+                result.innerHTML = `<p>❌ ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
