@@ -91,7 +91,8 @@ class TokenUsage(BaseModel):
 # ==================== REQUEST/RESPONSE MODELS ====================
 
 class AnalyzeImageRequest(BaseModel):
-    image_url: str
+    image_url: Optional[str] = None  # For backward compatibility
+    image_data: Optional[str] = None  # Base64 image data
 
 class GenerateAudioRequest(BaseModel):
     text: str
@@ -191,13 +192,27 @@ async def upload_image(request: ImageUploadRequest):
 async def analyze_image(request: AnalyzeImageRequest):
     """Analyze image with Gemini and suggest best model with cinematic prompts"""
     try:
-        # Download image
-        import requests
-        import tempfile
-        img_response = requests.get(request.image_url)
-        img_data = img_response.content
+        # Handle Base64 image data or URL
+        if request.image_data:
+            # Extract base64 data
+            base64_data = request.image_data
+            if ',' in base64_data:
+                base64_data = base64_data.split(',', 1)[1]
+            
+            # Decode base64 to bytes
+            img_data = base64.b64decode(base64_data)
+            logger.info(f"📎 Analyzing image from Base64 (size: {len(img_data)} bytes)")
+        elif request.image_url:
+            # Download from URL (legacy support)
+            import requests
+            img_response = requests.get(request.image_url)
+            img_data = img_response.content
+            logger.info(f"📎 Analyzing image from URL: {request.image_url}")
+        else:
+            raise HTTPException(status_code=400, detail="Either image_data or image_url must be provided")
 
-        # Save temporarily (cross-platform)
+        # Save temporarily for Gemini
+        import tempfile
         temp_dir = tempfile.gettempdir()
         temp_path = os.path.join(temp_dir, f"{uuid.uuid4()}.jpg")
         with open(temp_path, 'wb') as f:

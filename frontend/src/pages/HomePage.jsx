@@ -127,11 +127,11 @@ const HomePage = () => {
     }
   };
 
-  const analyzeImage = async (imgUrl) => {
+  const analyzeImage = async (imgData) => {
     setLoading(true);
     try {
       const response = await axios.post(`${API}/images/analyze`, {
-        image_url: imgUrl
+        image_data: imgData  // Send Base64 data instead of URL
       });
 
       if (response.data.success) {
