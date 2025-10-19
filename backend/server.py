@@ -12,8 +12,6 @@ from datetime import datetime, timezone
 import fal_client
 from elevenlabs import ElevenLabs
 from emergent_wrapper import LlmChat, UserMessage, FileContentWithMimeType
-import cloudinary
-import cloudinary.uploader
 import base64
 import io
 from PIL import Image
@@ -31,12 +29,6 @@ elevenlabs_client = ElevenLabs(api_key=os.environ.get('ELEVENLABS_KEY', ''))
 
 # Backend URL for serving images
 BACKEND_URL = os.environ.get('BACKEND_URL', 'http://localhost:8001')
-
-cloudinary.config(
-    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
-    api_key=os.environ.get('CLOUDINARY_API_KEY', ''),
-    api_secret=os.environ.get('CLOUDINARY_API_SECRET', '')
-)
 
 # Create the main app without a prefix
 app = FastAPI()
@@ -161,22 +153,38 @@ class UpdateBalanceRequest(BaseModel):
 async def root():
     return {"message": "Video Generation API"}
 
+class ImageUploadRequest(BaseModel):
+    """Request body for base64 image upload"""
+    image_data: str  # Base64 encoded image with data:image prefix
+
 @api_router.post("/images/upload")
-async def upload_image(file: UploadFile = File(...)):
-    """Upload image to Cloudinary"""
+async def upload_image(request: ImageUploadRequest):
+    """Accept base64 image directly (no external storage needed)"""
     try:
-        contents = await file.read()
+        # Validate base64 format
+        if not request.image_data.startswith('data:image'):
+            raise HTTPException(status_code=400, detail="Invalid base64 format. Must start with 'data:image'")
         
-        # Upload to Cloudinary - usando apenas os parâmetros essenciais
-        result = cloudinary.uploader.upload(contents)
+        # Extract base64 data
+        base64_data = request.image_data.split(',')[1] if ',' in request.image_data else request.image_data
+        
+        # Validate by decoding
+        image_bytes = base64.b64decode(base64_data)
+        
+        # Optional: Validate it's a valid image using PIL
+        img = Image.open(io.BytesIO(image_bytes))
+        img.verify()
+        
+        logger.info(f"✅ Image uploaded successfully - Format: {img.format}, Size: {len(image_bytes)} bytes")
         
         return {
             "success": True,
-            "image_url": result['secure_url'],
-            "cloudinary_id": result['public_id']
+            "image_data": request.image_data,  # Return base64 to use directly
+            "format": img.format,
+            "size_bytes": len(image_bytes)
         }
     except Exception as e:
-        logger.error(f"Error uploading image: {str(e)}")
+        logger.error(f"Error processing image upload: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/images/analyze")
@@ -1064,7 +1072,7 @@ async def generate_image_with_nano_banana(
             "enable_safety_checker": True
         }
         
-        # If reference image is provided, upload it and use in image_url parameter
+        # If reference image is provided (as base64), convert and use it
         if reference_image:
             try:
                 # Read image file
@@ -1072,15 +1080,12 @@ async def generate_image_with_nano_banana(
                 
                 logger.info(f"📎 Reference image provided: {reference_image.filename}")
                 
-                # Upload reference image to cloudinary first
-                import io
-                upload_result = cloudinary.uploader.upload(
-                    io.BytesIO(image_bytes),
-                    folder="reference_images",
-                    resource_type="image"
-                )
-                reference_image_url = upload_result['secure_url']
-                logger.info(f"✅ Reference image uploaded: {reference_image_url}")
+                # Convert to base64 for FAL.AI (direct use, no external storage)
+                import base64
+                base64_image = base64.b64encode(image_bytes).decode('utf-8')
+                reference_image_url = f"data:image/jpeg;base64,{base64_image}"
+                
+                logger.info(f"✅ Reference image converted to base64 (size: {len(image_bytes)} bytes)")
                 
                 # Add reference image to FAL arguments
                 fal_arguments["image_url"] = reference_image_url
@@ -1111,26 +1116,13 @@ async def generate_image_with_nano_banana(
             
             # Extract image URL from result
             if 'images' in result and len(result['images']) > 0:
-                # FLUX returns a list of image objects with 'url' field
+                # FLUX returns a list of image objects with 'url' field (temporary URL, valid 24h+)
                 image_url = result['images'][0]['url']
-                logger.info(f"✅ Image generated: {image_url}")
+                logger.info(f"✅ Image generated (temporary URL, valid 24h+): {image_url}")
                 
-                # Download image and upload to Cloudinary for permanent storage
-                try:
-                    response = requests.get(image_url, timeout=30)
-                    response.raise_for_status()
-                    
-                    upload_result = cloudinary.uploader.upload(
-                        io.BytesIO(response.content),
-                        folder="generated_images",
-                        resource_type="image"
-                    )
-                    image_url = upload_result['secure_url']
-                    cloudinary_id = upload_result['public_id']
-                    logger.info(f"✅ Image uploaded to Cloudinary: {cloudinary_id}")
-                except Exception as cloudinary_error:
-                    logger.warning(f"Cloudinary upload failed: {str(cloudinary_error)}, using FAL URL")
-                    cloudinary_id = None
+                # Use FAL.AI temporary URL directly (no external storage needed)
+                # These URLs are valid for 24+ hours, sufficient for most use cases
+                cloudinary_id = None
             else:
                 raise HTTPException(status_code=500, detail="No image generated by FAL.AI")
             
