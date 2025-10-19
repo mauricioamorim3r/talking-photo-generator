@@ -19,6 +19,9 @@ cloudinary>=1.40.0
 # HTTP & Networking
 requests>=2.31.0
 
+# File Upload Support (required by FastAPI)
+python-multipart>=0.0.9
+
 # Utilities
 python-dotenv>=1.0.0
 
