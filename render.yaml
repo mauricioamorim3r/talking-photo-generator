@@ -25,12 +25,13 @@ services:
     healthCheckPath: /health
 
   # Frontend Service
-  - type: web
+  - type: static
     name: talking-photo-frontend
     runtime: node
     region: oregon
     plan: free
     buildCommand: cd frontend && npm install --legacy-peer-deps && npm run build
+    staticPublishPath: frontend/build
     envVars:
       - key: NODE_VERSION
         value: 18.17.0
