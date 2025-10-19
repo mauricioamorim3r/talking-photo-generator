@@ -60,7 +60,7 @@
   },
   "scripts": {
     "start": "craco start",
-    "build": "craco build",
+    "build": "craco build && node copy-redirects.js",
     "test": "craco test"
   },
   "browserslist": {
