@@ -180,16 +180,28 @@ function ImageGeneratorPage() {
 
     setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('prompt', prompt);
+      const requestData = {
+        prompt: prompt.trim()
+      };
       
+      // If reference image exists, convert to base64
       if (referenceImage) {
-        formData.append('reference_image', referenceImage);
+        const reader = new FileReader();
+        
+        // Wrap FileReader in Promise
+        const base64Promise = new Promise((resolve, reject) => {
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(referenceImage);
+        });
+        
+        const base64Image = await base64Promise;
+        requestData.reference_image_base64 = base64Image;
       }
 
-      const response = await axios.post(`${BACKEND_URL}/api/images/generate`, formData, {
+      const response = await axios.post(`${BACKEND_URL}/api/images/generate`, requestData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': 'application/json',
         },
       });
 

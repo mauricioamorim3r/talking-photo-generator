@@ -65,26 +65,46 @@ const HomePage = () => {
   const handleImageUpload = async (file) => {
     setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+      // Convert file to Base64
+      const reader = new FileReader();
+      
+      reader.onloadend = async () => {
+        try {
+          const base64Image = reader.result; // data:image/jpeg;base64,...
+          
+          const uploadResponse = await axios.post(`${API}/images/upload`, {
+            image_data: base64Image
+          }, {
+            headers: { 'Content-Type': 'application/json' }
+          });
 
-      const uploadResponse = await axios.post(`${API}/images/upload`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-
-      if (uploadResponse.data.success) {
-        const imgUrl = uploadResponse.data.image_url;
-        setImageUrl(imgUrl);
-        setImageFile(URL.createObjectURL(file));
-        toast.success('Imagem carregada com sucesso!');
-        
-        // Analyze image
-        await analyzeImage(imgUrl);
-      }
+          if (uploadResponse.data.success) {
+            const imgData = uploadResponse.data.image_data;
+            setImageUrl(imgData); // Store base64 instead of URL
+            setImageFile(URL.createObjectURL(file));
+            toast.success('Imagem carregada com sucesso!');
+            
+            // Analyze image (now using base64)
+            await analyzeImage(imgData);
+          }
+        } catch (error) {
+          console.error('Error uploading image:', error);
+          toast.error('Erro ao carregar imagem');
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      reader.onerror = () => {
+        console.error('Error reading file');
+        toast.error('Erro ao ler arquivo');
+        setLoading(false);
+      };
+      
+      reader.readAsDataURL(file);
     } catch (error) {
-      console.error('Error uploading image:', error);
-      toast.error('Erro ao carregar imagem');
-    } finally {
+      console.error('Error in handleImageUpload:', error);
+      toast.error('Erro ao processar imagem');
       setLoading(false);
     }
   };

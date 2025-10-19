@@ -1045,15 +1045,17 @@ async def delete_image(image_id: str):
 
 # ==================== IMAGE GENERATION ENDPOINTS ====================
 
+class ImageGenerationRequest(BaseModel):
+    """Request body for image generation"""
+    prompt: str
+    reference_image_base64: Optional[str] = None
+
 @api_router.post("/images/generate")
-async def generate_image_with_nano_banana(
-    prompt: str = Form(...),
-    reference_image: Optional[UploadFile] = File(None)
-):
-    """Generate image using Gemini 2.5 Flash Image (Nano Banana) with optional reference image"""
-    file_contents = []  # Initialize outside try block for finally cleanup
+async def generate_image_with_nano_banana(request: ImageGenerationRequest):
+    """Generate image using FAL.AI FLUX with optional reference image (base64)"""
     
     try:
+        prompt = request.prompt
         logger.info(f"🎨 Generating image with prompt: {prompt[:100]}...")
         
         # Use FAL.AI for image generation with FLUX model
@@ -1072,20 +1074,22 @@ async def generate_image_with_nano_banana(
             "enable_safety_checker": True
         }
         
-        # If reference image is provided (as base64), convert and use it
-        if reference_image:
+        # If reference image is provided (as base64), use it directly
+        if request.reference_image_base64:
             try:
-                # Read image file
-                image_bytes = await reference_image.read()
+                logger.info(f"📎 Reference image provided as base64")
                 
-                logger.info(f"📎 Reference image provided: {reference_image.filename}")
+                # Extract base64 data (remove data:image/...;base64, prefix if present)
+                base64_data = request.reference_image_base64
+                if ',' in base64_data:
+                    base64_data = base64_data.split(',', 1)[1]
                 
-                # Convert to base64 for FAL.AI (direct use, no external storage)
-                import base64
-                base64_image = base64.b64encode(image_bytes).decode('utf-8')
-                reference_image_url = f"data:image/jpeg;base64,{base64_image}"
+                # Validate base64
+                image_bytes = base64.b64decode(base64_data)
+                logger.info(f"✅ Reference image decoded (size: {len(image_bytes)} bytes)")
                 
-                logger.info(f"✅ Reference image converted to base64 (size: {len(image_bytes)} bytes)")
+                # Use base64 directly for FAL.AI
+                reference_image_url = f"data:image/jpeg;base64,{base64_data}"
                 
                 # Add reference image to FAL arguments
                 fal_arguments["image_url"] = reference_image_url
@@ -1150,7 +1154,7 @@ async def generate_image_with_nano_banana(
                 details={
                     "prompt_length": len(prompt), 
                     "model": "fal-ai/flux/dev",
-                    "has_reference_image": reference_image is not None,
+                    "has_reference_image": request.reference_image_base64 is not None,
                     "image_size": fal_arguments["image_size"]
                 }
             )
