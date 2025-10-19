@@ -21,13 +21,14 @@
 
 ---
 
-## 🔄 FRONTEND - CRIADO VIA API, AGUARDANDO CONFIGURAÇÃO
+## 🔄 FRONTEND - CRIADO VIA API (RENOMEADO)
 
 ### Status: 🟡 CRIADO (configuração manual necessária)
 
-- **Serviço:** talking-photo-frontend
-- **URL:** https://talking-photo-frontend.onrender.com
-- **Service ID:** srv-d3qct5jipnbc73af8ie0 (NOVO - recriado via API)
+- **Serviço:** foto-video-fantasia (RENOMEADO de talking-photo-frontend)
+- **URL:** https://foto-video-fantasia.onrender.com
+- **Service ID:** srv-d3qd08ali9vc73c8a5f0 (ATUAL)
+- **Service ID Antigo:** ~~srv-d3qct5jipnbc73af8ie0~~ (deletado)
 - **Tipo:** Static Site
 - **Repositório:** mauricioamorim3r/talking-photo-generator
 - **Branch:** main
@@ -42,12 +43,12 @@
 
 ### 🔧 Próximos Passos:
 
-1. **Abrir Dashboard:** https://dashboard.render.com/static/srv-d3qct5jipnbc73af8ie0
+1. **Abrir Dashboard:** https://dashboard.render.com/static/srv-d3qd08ali9vc73c8a5f0
 2. **Settings** → Configurar Build Command e Publish Directory
 3. **Environment** → Adicionar REACT_APP_API_URL
 4. **Save Changes** → **Manual Deploy**
 
-**Guia completo:** Ver arquivo `FRONTEND_FINAL_CONFIG.md`
+**Guia completo:** Ver arquivo `RENAME_SUCCESS.md` ou `FRONTEND_FINAL_CONFIG.md`
 
 ---
 
@@ -64,10 +65,11 @@
 1. ✅ Testado conectividade com Render API
 2. ✅ Listado todos os 7 serviços da conta
 3. ✅ Identificado serviço frontend existente com config incorreta
-4. ✅ Deletado serviço antigo (srv-d3q9r8odl3ps73bp1p8g)
-5. ✅ Criado novo serviço (srv-d3qct5jipnbc73af8ie0)
-6. ✅ Configurado repo, branch, rootDir via API
-7. ⚠️ Build Command e Publish Path não aceitos pela API (limitação do Render)
+4. ✅ Deletado serviço antigo talking-photo-frontend (srv-d3q9r8odl3ps73bp1p8g)
+5. ✅ Criado novo serviço talking-photo-frontend (srv-d3qct5jipnbc73af8ie0)
+6. ✅ **RENOMEADO para foto-video-fantasia (srv-d3qd08ali9vc73c8a5f0)** - ATUAL
+7. ✅ Configurado repo, branch, rootDir via API
+8. ⚠️ Build Command e Publish Path não aceitos pela API (limitação do Render)
 
 ### 🛠️ Scripts Python Criados:
 
@@ -172,7 +174,7 @@
 Após completar a configuração:
 
 - ✅ Backend: https://gerador-fantasia.onrender.com (JÁ ONLINE)
-- ✅ Frontend: https://talking-photo-frontend.onrender.com (em 10 min)
+- ✅ Frontend: https://foto-video-fantasia.onrender.com (em 10 min)
 - ✅ Integração completa backend ↔ frontend
 - ✅ Aplicação totalmente funcional na nuvem
 
