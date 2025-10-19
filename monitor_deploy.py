@@ -8,7 +8,7 @@ import time
 from datetime import datetime
 
 API_KEY = "rnd_kbYq0mcIml5b2eOSsGUmfSDmlT8S"
-SERVICE_ID = "srv-d3qct5jipnbc73af8ie0"  # ATUALIZADO - Novo serviço recriado
+SERVICE_ID = "srv-d3qd08ali9vc73c8a5f0"  # foto-video-fantasia
 DEPLOY_ID = None  # Será obtido automaticamente
 
 headers = {"Authorization": f"Bearer {API_KEY}"}
@@ -62,7 +62,7 @@ def get_status_emoji(status):
 
 def main():
     print("=" * 70)
-    print("🎯 MONITOR DE DEPLOY - TALKING-PHOTO-FRONTEND")
+    print("🎯 MONITOR DE DEPLOY - FOTO-VIDEO-FANTASIA (FRONTEND)")
     print("=" * 70)
     print(f"\n📝 Service ID: {SERVICE_ID}")
     if DEPLOY_ID:

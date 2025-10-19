@@ -2,10 +2,10 @@
 
 ## ✅ Status Atual
 
-- **Serviço Criado:** talking-photo-frontend
-- **Service ID:** srv-d3qct5jipnbc73af8ie0
-- **URL:** https://talking-photo-frontend.onrender.com
-- **Dashboard:** https://dashboard.render.com/static/srv-d3qct5jipnbc73af8ie0
+- **Serviço Criado:** foto-video-fantasia
+- **Service ID:** srv-d3qd08ali9vc73c8a5f0
+- **URL:** https://foto-video-fantasia.onrender.com
+- **Dashboard:** https://dashboard.render.com/static/srv-d3qd08ali9vc73c8a5f0
 
 ## 🔧 CONFIGURAÇÃO NECESSÁRIA (3 minutos)
 
@@ -53,7 +53,7 @@ https://gerador-fantasia.onrender.com
 
 **Frontend:**
 ```
-https://talking-photo-frontend.onrender.com
+https://foto-video-fantasia.onrender.com
 ```
 
 **Backend (já funcionando):**
@@ -69,7 +69,7 @@ Após salvar e iniciar o deploy, execute:
 python monitor_deploy.py
 ```
 
-(Mas antes, atualize o SERVICE_ID no arquivo para: srv-d3qct5jipnbc73af8ie0)
+(Mas antes, atualize o SERVICE_ID no arquivo para: srv-d3qd08ali9vc73c8a5f0)
 
 ---
 
