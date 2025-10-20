@@ -10,7 +10,19 @@
       "Bash(npm install)",
       "Bash(npm install --legacy-peer-deps)",
       "Bash(npm start)",
-      "Bash(timeout 10)"
+      "Bash(timeout 10)",
+      "WebFetch(domain:ai.google.dev)",
+      "WebSearch",
+      "Bash(python -c \"import google.generativeai as genai; print(''✅ google.generativeai instalado'')\")",
+      "Bash(python -c \"import google.generativeai as genai; print(''google.generativeai OK''); import PIL; print(''PIL OK'')\")",
+      "Bash(python test_gemini_image_generation.py)",
+      "Bash(curl -s http://localhost:8001/health)",
+      "Bash(start /B cmd /c \"cd backend && python -m uvicorn server:app --reload --port 8001 > backend_log.txt 2>&1\")",
+      "Bash(python -m uvicorn server:app --reload --port 8001)",
+      "Bash(timeout /t 10 /nobreak)",
+      "Bash(python -c \"import aiohttp; print(''aiohttp OK'')\")",
+      "Bash(python test_real_image_generation.py)",
+      "Bash(dir test_output_*.png)"
     ],
     "deny": [],
     "ask": []

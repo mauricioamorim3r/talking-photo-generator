@@ -12,7 +12,7 @@ services:
         value: "3.10.0"
       - key: GEMINI_KEY
         sync: false
-      - key: ELEVENLABS_API_KEY
+      - key: ELEVENLABS_KEY
         sync: false
       - key: FAL_KEY
         sync: false
@@ -22,12 +22,14 @@ services:
         sync: false
       - key: CLOUDINARY_API_SECRET
         sync: false
+      - key: BACKEND_URL
+        value: https://talking-photo-backend.onrender.com
     healthCheckPath: /health
 
   # Frontend Service
-  - type: static
+  - type: web
     name: talking-photo-frontend
-    runtime: node
+    runtime: static
     region: oregon
     plan: free
     buildCommand: cd frontend && npm install --legacy-peer-deps && npm run build
@@ -35,7 +37,7 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 18.17.0
-      - key: REACT_APP_API_URL
+      - key: REACT_APP_BACKEND_URL
         value: https://talking-photo-backend.onrender.com
 
 databases: []

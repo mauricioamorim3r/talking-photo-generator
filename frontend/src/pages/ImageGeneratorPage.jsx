@@ -249,8 +249,15 @@ function ImageGeneratorPage() {
   };
 
   const usePromptTemplate = (template) => {
-    setPrompt(template);
-    toast.success('Prompt aplicado! Você pode editá-lo antes de gerar.');
+    // If reference image is loaded, add instruction to preserve facial features
+    if (referenceImage) {
+      const enhancedPrompt = `${template}\n\n⚠️ IMPORTANTE: Manter o rosto e expressões faciais EXATAMENTE como na imagem de referência carregada. Não alterar as feições da pessoa.`;
+      setPrompt(enhancedPrompt);
+      toast.success('Prompt aplicado com instrução para preservar o rosto da imagem de referência!');
+    } else {
+      setPrompt(template);
+      toast.success('Prompt aplicado! Você pode editá-lo antes de gerar.');
+    }
   };
 
   return (
@@ -351,6 +358,20 @@ function ImageGeneratorPage() {
                       borderRadius: '4px'
                     }}
                   />
+                  <div style={{
+                    marginTop: '0.5rem',
+                    padding: '0.75rem',
+                    backgroundColor: '#fef3c7',
+                    border: '1px solid #fbbf24',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.875rem',
+                    color: '#78350f'
+                  }}>
+                    <strong>✨ Imagem de Referência Carregada</strong>
+                    <p style={{ margin: '0.25rem 0 0 0' }}>
+                      Os prompts da biblioteca preservarão automaticamente o rosto e expressões faciais desta pessoa. Apenas o estilo, cenário ou roupas serão modificados.
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
@@ -401,7 +422,7 @@ function ImageGeneratorPage() {
             </Button>
 
             <p className="cost-info">
-              💰 Custo: $0.039 por imagem (~R$ 0,20)
+              💰 Custo: $0.039 por imagem (~R$ 0,20) - Gemini 2.5 Flash Image
             </p>
           </CardContent>
         </Card>
