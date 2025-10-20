@@ -84,15 +84,22 @@ class VideoProviderManager:
             return False
     
     def _check_google(self) -> bool:
-        """Verifica se Google Vertex AI está configurado (API Key simplificado)"""
-        # Método simplificado: apenas verifica se API Key existe
-        api_key = os.getenv("GOOGLE_VERTEX_API_KEY")
+        """Verifica se Google Vertex AI está configurado"""
+        # Verifica se tem as credenciais necessárias para Google Direct
+        project_id = os.getenv("GOOGLE_CLOUD_PROJECT_ID")
+        credentials = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
         
-        if not api_key:
-            logger.warning("⚠️ Google Vertex AI não configurado (GOOGLE_VERTEX_API_KEY faltando)")
+        if not project_id or not credentials:
+            logger.warning("⚠️ Google Veo Direct não configurado")
+            logger.warning("   Necessário: GOOGLE_CLOUD_PROJECT_ID e GOOGLE_APPLICATION_CREDENTIALS")
             return False
         
-        logger.info("✅ Google Vertex AI configurado (API Key)")
+        # Verifica se arquivo de credenciais existe
+        if not os.path.exists(credentials):
+            logger.warning(f"⚠️ Arquivo de credenciais não encontrado: {credentials}")
+            return False
+        
+        logger.info("✅ Google Veo Direct configurado (Service Account)")
         return True
     
     def get_available_providers(self) -> Dict[str, bool]:
@@ -155,7 +162,7 @@ class VideoProviderManager:
         # Mapeia provider para endpoint FAL
         endpoint_map = {
             VideoProvider.FAL_VEO3: "fal-ai/veo3.1/image-to-video",
-            VideoProvider.FAL_SORA2: "fal-ai/sora-turbo/image-to-video",
+            VideoProvider.FAL_SORA2: "fal-ai/sora-2/image-to-video",
             VideoProvider.FAL_WAV2LIP: "fal-ai/wav2lip"
         }
         
@@ -220,16 +227,19 @@ class VideoProviderManager:
         if not self.google_available:
             raise RuntimeError(
                 "Google Veo Direct não está disponível. "
-                "Configure GOOGLE_VERTEX_API_KEY no .env"
+                "Configure GOOGLE_CLOUD_PROJECT_ID e GOOGLE_APPLICATION_CREDENTIALS no .env"
             )
         
         logger.info(f"🎬 Gerando vídeo via Google Veo 3.1 Direct: {prompt[:50]}...")
         
-        # Import dinâmico da versão simplificada
-        from veo31_simple import Veo31DirectSimple
+        # Import implementação REAL (não a simplificada)
+        from veo31_direct import Veo31DirectAPI
         
-        # Cria cliente (usa API Key do .env)
-        veo_client = Veo31DirectSimple()
+        project_id = os.getenv("GOOGLE_CLOUD_PROJECT_ID")
+        location = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
+        
+        # Cria cliente (usa Service Account do .env)
+        veo_client = Veo31DirectAPI(project_id=project_id, location=location)
         
         # Gera vídeo (async)
         result = await asyncio.get_event_loop().run_in_executor(
