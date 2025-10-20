@@ -124,3 +124,4 @@ watchfiles==1.1.0
 websockets==13.1
 yarl==1.18.3
 zipp==3.21.0
+google-cloud-aiplatform>=1.121.0

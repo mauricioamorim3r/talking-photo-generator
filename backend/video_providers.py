@@ -85,22 +85,24 @@ class VideoProviderManager:
     
     def _check_google(self) -> bool:
         """Verifica se Google Vertex AI está configurado"""
-        # Verifica se tem as credenciais necessárias para Google Direct
+        # Método 1: API Key (mais simples e rápido)
+        api_key = os.getenv("GOOGLE_VERTEX_API_KEY")
+        
+        if api_key:
+            logger.info("✅ Google Veo Direct configurado (API Key)")
+            return True
+        
+        # Método 2: Service Account (mais completo, mas requer mais setup)
         project_id = os.getenv("GOOGLE_CLOUD_PROJECT_ID")
         credentials = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
         
-        if not project_id or not credentials:
-            logger.warning("⚠️ Google Veo Direct não configurado")
-            logger.warning("   Necessário: GOOGLE_CLOUD_PROJECT_ID e GOOGLE_APPLICATION_CREDENTIALS")
-            return False
+        if project_id and credentials and os.path.exists(credentials):
+            logger.info("✅ Google Veo Direct configurado (Service Account)")
+            return True
         
-        # Verifica se arquivo de credenciais existe
-        if not os.path.exists(credentials):
-            logger.warning(f"⚠️ Arquivo de credenciais não encontrado: {credentials}")
-            return False
-        
-        logger.info("✅ Google Veo Direct configurado (Service Account)")
-        return True
+        logger.warning("⚠️ Google Veo Direct não configurado")
+        logger.warning("   Configure GOOGLE_VERTEX_API_KEY ou (GOOGLE_CLOUD_PROJECT_ID + GOOGLE_APPLICATION_CREDENTIALS)")
+        return False
     
     def get_available_providers(self) -> Dict[str, bool]:
         """Retorna lista de providers disponíveis"""
@@ -227,30 +229,49 @@ class VideoProviderManager:
         if not self.google_available:
             raise RuntimeError(
                 "Google Veo Direct não está disponível. "
-                "Configure GOOGLE_CLOUD_PROJECT_ID e GOOGLE_APPLICATION_CREDENTIALS no .env"
+                "Configure GOOGLE_VERTEX_API_KEY ou (GOOGLE_CLOUD_PROJECT_ID + GOOGLE_APPLICATION_CREDENTIALS)"
             )
         
         logger.info(f"🎬 Gerando vídeo via Google Veo 3.1 Direct: {prompt[:50]}...")
         
-        # Import implementação REAL (não a simplificada)
-        from veo31_direct import Veo31DirectAPI
+        # Verifica qual método de autenticação usar
+        api_key = os.getenv("GOOGLE_VERTEX_API_KEY")
         
-        project_id = os.getenv("GOOGLE_CLOUD_PROJECT_ID")
-        location = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
-        
-        # Cria cliente (usa Service Account do .env)
-        veo_client = Veo31DirectAPI(project_id=project_id, location=location)
-        
-        # Gera vídeo (async)
-        result = await asyncio.get_event_loop().run_in_executor(
-            None,
-            veo_client.generate_video_from_image,
-            image_url,
-            prompt,
-            duration,
-            with_audio,
-            aspect_ratio
-        )
+        if api_key:
+            # Método 1: API Key (mais simples)
+            logger.info("🔑 Usando autenticação via API Key")
+            from veo31_simple import Veo31DirectSimple
+            
+            veo_client = Veo31DirectSimple(api_key=api_key)
+            
+            result = await asyncio.get_event_loop().run_in_executor(
+                None,
+                veo_client.generate_video_from_image,
+                image_url,
+                prompt,
+                duration,
+                with_audio,
+                aspect_ratio
+            )
+        else:
+            # Método 2: Service Account
+            logger.info("🔑 Usando autenticação via Service Account")
+            from veo31_direct import Veo31DirectAPI
+            
+            project_id = os.getenv("GOOGLE_CLOUD_PROJECT_ID")
+            location = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
+            
+            veo_client = Veo31DirectAPI(project_id=project_id, location=location)
+            
+            result = await asyncio.get_event_loop().run_in_executor(
+                None,
+                veo_client.generate_video_from_image,
+                image_url,
+                prompt,
+                duration,
+                with_audio,
+                aspect_ratio
+            )
         
         logger.info(f"✅ Vídeo gerado via Google! Custo: ${result['cost']:.2f}")
         

@@ -1,11 +1,10 @@
 """
-Veo 3.1 Direct - Simplified API Key Version
-Usa Google Vertex AI com API Key (mais simples que service account)
+Veo 3.1 Direct - Simplified API Version
+Usa Google Vertex AI SDK (mais simples e direto)
 """
 
 import os
 import base64
-import requests
 import logging
 import time
 from typing import Optional, Dict, Any
@@ -15,26 +14,44 @@ logger = logging.getLogger(__name__)
 
 class Veo31DirectSimple:
     """
-    Wrapper simplificado para Veo 3.1 usando API Key
-    Mais fácil de configurar que service account
+    Wrapper simplificado para Veo 3.1 usando Vertex AI SDK
+    Requer: pip install google-cloud-aiplatform
     """
     
-    def __init__(self, api_key: Optional[str] = None, location: str = "us-central1"):
+    def __init__(self, api_key: Optional[str] = None, project_id: Optional[str] = None, location: str = "us-central1"):
         """
         Args:
-            api_key: Google Vertex AI API Key (ou via env GOOGLE_VERTEX_API_KEY)
+            api_key: Google API Key (ou via env GOOGLE_VERTEX_API_KEY)
+            project_id: GCP Project ID (ou via env GOOGLE_CLOUD_PROJECT_ID)
             location: Region (us-central1, europe-west4)
         """
         self.api_key = api_key or os.getenv("GOOGLE_VERTEX_API_KEY")
+        self.project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT_ID") or "seu-projeto-id"
         self.location = location
         
         if not self.api_key:
-            raise ValueError(
-                "Google Vertex API Key não encontrada. "
+            logger.warning(
+                "⚠️ Google Vertex API Key não encontrada. "
                 "Configure GOOGLE_VERTEX_API_KEY no .env"
             )
         
-        logger.info(f"✅ Veo 3.1 Direct configurado (region: {location})")
+        # Tenta importar SDK do Vertex AI
+        try:
+            import vertexai
+            from vertexai import types
+            
+            # Inicializa Vertex AI com API Key
+            os.environ["GOOGLE_API_KEY"] = self.api_key
+            vertexai.init(project=self.project_id, location=self.location)
+            
+            self.vertexai = vertexai
+            self.types = types
+            logger.info(f"✅ Veo 3.1 Direct configurado (project: {self.project_id}, region: {location})")
+            
+        except ImportError:
+            logger.error("❌ google-cloud-aiplatform não instalado!")
+            logger.error("   Instale com: pip install google-cloud-aiplatform")
+            raise RuntimeError("google-cloud-aiplatform necessário para Veo Direct")
     
     def _image_to_base64(self, image_url: str) -> str:
         """Convert image URL or path to base64"""
@@ -63,7 +80,7 @@ class Veo31DirectSimple:
         aspect_ratio: str = "16:9"
     ) -> Dict[str, Any]:
         """
-        Generate video from image using Veo 3.1
+        Generate video from image using Veo 3.1 via Vertex AI SDK
         
         Args:
             image_url: URL da imagem ou caminho local
@@ -74,7 +91,7 @@ class Veo31DirectSimple:
             
         Returns:
             {
-                "video_url": "https://storage.googleapis.com/...",
+                "video_url": "gs://bucket/video.mp4" ou bytes,
                 "status": "completed",
                 "duration": 8,
                 "cost": 1.20,
@@ -82,79 +99,106 @@ class Veo31DirectSimple:
             }
         """
         
-        logger.info(f"🎬 Generating video with Veo 3.1 Direct...")
+        logger.info(f"🎬 Generating video with Veo 3.1 Direct via SDK...")
         logger.info(f"   Duration: {duration_seconds}s")
         logger.info(f"   Audio: {with_audio}")
         logger.info(f"   Prompt: {prompt[:80]}...")
         
         try:
-            # 1. Convert image to base64
-            image_b64 = self._image_to_base64(image_url)
+            # Importa o cliente do Vertex AI
+            from vertexai.preview.vision_models import VideoGenerationModel
             
-            # 2. Prepare request
-            # Nota: Esta é a API do Vertex AI Veo
-            # Endpoint pode variar - ajustar conforme documentação oficial
-            endpoint = f"https://{self.location}-aiplatform.googleapis.com/v1/projects/YOUR_PROJECT_ID/locations/{self.location}/publishers/google/models/veo-3.1:generateVideo"
+            # Carrega o modelo
+            video_model = VideoGenerationModel.from_pretrained("veo-3.1")
             
-            headers = {
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
-            }
+            # Carrega a imagem
+            image_bytes = self._load_image_bytes(image_url)
+            image = self.types.Image(image_bytes=image_bytes)
             
-            payload = {
-                "instances": [{
-                    "image": {
-                        "bytesBase64Encoded": image_b64
-                    },
-                    "prompt": prompt,
-                    "parameters": {
-                        "duration": f"{duration_seconds}s",
-                        "aspectRatio": aspect_ratio,
-                        "generateAudio": with_audio
-                    }
-                }]
-            }
+            # Configura parâmetros
+            config = self.types.GenerateVideosConfig(
+                aspect_ratio=aspect_ratio,
+                number_of_videos=1,
+                duration_seconds=duration_seconds,
+                resolution="1080p",
+                person_generation="allow_adult",
+                enhance_prompt=True,
+                generate_audio=with_audio,
+            )
             
-            # 3. Submit request
+            # Gera vídeo
             logger.info(f"📡 Sending request to Vertex AI...")
-            response = requests.post(endpoint, headers=headers, json=payload, timeout=300)
+            operation = video_model.generate_videos(
+                prompt=prompt,
+                image=image,
+                config=config
+            )
             
-            if response.status_code != 200:
-                error_msg = f"Vertex AI error: {response.status_code} - {response.text}"
-                logger.error(error_msg)
-                raise RuntimeError(error_msg)
+            # Aguarda conclusão (polling)
+            logger.info(f"⏳ Waiting for video generation...")
+            while not operation.done:
+                time.sleep(10)
+                logger.info(f"   Status: {operation.metadata if hasattr(operation, 'metadata') else 'processing'}...")
             
-            result = response.json()
-            
-            # 4. Extract video URL
-            # Estrutura de resposta pode variar - ajustar conforme API real
-            video_url = result.get('predictions', [{}])[0].get('videoUri') or result.get('video_url')
-            
-            if not video_url:
-                raise RuntimeError(f"No video URL in response: {result}")
-            
-            # 5. Calculate cost
-            # Google Veo 3.1 pricing (estimado)
-            # Base: $0.12/seg sem áudio, $0.15/seg com áudio
-            cost_per_sec = 0.15 if with_audio else 0.12
-            total_cost = duration_seconds * cost_per_sec
-            
-            logger.info(f"✅ Video generated successfully!")
-            logger.info(f"   URL: {video_url[:80]}...")
-            logger.info(f"   Cost: ${total_cost:.2f}")
-            
-            return {
-                "video_url": video_url,
-                "status": "completed",
-                "duration": duration_seconds,
-                "cost": round(total_cost, 2),
-                "provider": "google_veo3",
-                "with_audio": with_audio
-            }
-            
+            # Extrai resultado
+            if operation.response:
+                generated_video = operation.result.generated_videos[0]
+                
+                # Pode retornar bytes ou URI
+                video_data = generated_video.video.video_bytes if hasattr(generated_video.video, 'video_bytes') else None
+                video_uri = generated_video.video.uri if hasattr(generated_video.video, 'uri') else None
+                
+                # Calcula custo
+                cost_per_sec = 0.15 if with_audio else 0.12
+                total_cost = duration_seconds * cost_per_sec
+                
+                logger.info(f"✅ Video generated successfully!")
+                logger.info(f"   Cost: ${total_cost:.2f}")
+                
+                return {
+                    "video_url": video_uri or self._save_video_bytes(video_data),
+                    "video_bytes": video_data,
+                    "status": "completed",
+                    "duration": duration_seconds,
+                    "cost": round(total_cost, 2),
+                    "provider": "google_veo3",
+                    "with_audio": with_audio
+                }
+            else:
+                raise RuntimeError(f"No response from Vertex AI: {operation}")
+                
         except Exception as e:
             logger.error(f"❌ Error generating video: {e}")
             raise
+    
+    def _load_image_bytes(self, image_url: str) -> bytes:
+        """Load image from URL or file path"""
+        import requests
+        
+        if image_url.startswith(('http://', 'https://')):
+            # Download from URL
+            response = requests.get(image_url, timeout=30)
+            response.raise_for_status()
+            return response.content
+        else:
+            # Read from file
+            with open(image_url, 'rb') as f:
+                return f.read()
+    
+    def _save_video_bytes(self, video_bytes: bytes) -> str:
+        """Save video bytes to temp file and return path"""
+        if not video_bytes:
+            return ""
+        
+        import tempfile
+        
+        # Salva em arquivo temporário
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4')
+        temp_file.write(video_bytes)
+        temp_file.close()
+        
+        logger.info(f"💾 Video saved to: {temp_file.name}")
+        return temp_file.name
 
 
 # Function para usar no server.py
