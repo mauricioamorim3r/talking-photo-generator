@@ -41,6 +41,11 @@ const HomePage = () => {
   const [voiceSimilarity, setVoiceSimilarity] = useState(0.75);
   const [duration, setDuration] = useState(5);
   
+  // Provider selection states (NEW)
+  const [providers, setProviders] = useState([]);
+  const [selectedProvider, setSelectedProvider] = useState('google_veo3'); // Google por padrão (mais barato)
+  const [providersLoading, setProvidersLoading] = useState(false);
+  
   const webcamRef = useRef(null);
   const fileInputRef = useRef(null);
   const voicesFetchedRef = useRef(false);
@@ -59,6 +64,33 @@ const HomePage = () => {
       console.error('Error fetching voices:', error);
       voicesFetchedRef.current = false; // Allow retry on error
       // Don't show error toast here as it's not critical
+    }
+  };
+
+  const fetchProviders = async () => {
+    setProvidersLoading(true);
+    try {
+      const response = await axios.get(`${API}/video/providers`);
+      if (response.data.success) {
+        setProviders(response.data.providers);
+        
+        // Auto-select Google if available (cheaper)
+        const googleProvider = response.data.providers.find(p => p.id === 'google_veo3');
+        if (googleProvider?.available) {
+          setSelectedProvider('google_veo3');
+        } else {
+          // Fallback to FAL Veo3
+          const falProvider = response.data.providers.find(p => p.id === 'fal_veo3');
+          if (falProvider?.available) {
+            setSelectedProvider('fal_veo3');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching providers:', error);
+      toast.error('Erro ao carregar providers de vídeo');
+    } finally {
+      setProvidersLoading(false);
     }
   };
 
@@ -242,10 +274,19 @@ const HomePage = () => {
     setStep(4);
     
     try {
+      // Map provider ID to provider name for backend
+      let providerName = 'fal'; // default
+      if (selectedProvider === 'google_veo3') {
+        providerName = 'google';
+      } else if (selectedProvider === 'fal_veo3' || selectedProvider === 'fal_sora2') {
+        providerName = 'fal';
+      }
+      
       const response = await axios.post(`${API}/video/generate`, {
         image_url: imageUrl,
         model: selectedModel,
         mode: selectedMode,
+        provider: providerName, // NEW: send provider to backend
         prompt: prompt,
         audio_url: audioUrl || null,
         duration: duration
@@ -276,7 +317,14 @@ const HomePage = () => {
         toast.error('Erro ao gerar vídeo: ' + (errorDetail || error.message));
       }
       
-      setStep(3);
+      // Voltar para o step apropriado baseado no modelo
+      // Veo 3.1 e Sora 2: voltar para step 2 (configuração de prompt)
+      // Outros modelos: voltar para step 3 (configuração de áudio)
+      if (selectedModel === 'veo3' || selectedModel === 'sora2') {
+        setStep(2); // Voltar para configuração de prompt (não tem step de áudio)
+      } else {
+        setStep(3); // Voltar para configuração de áudio
+      }
     } finally {
       setLoading(false);
     }
@@ -285,6 +333,11 @@ const HomePage = () => {
   // Load voices on component mount
   useEffect(() => {
     fetchVoices();
+  }, []);
+
+  // Load providers on component mount
+  useEffect(() => {
+    fetchProviders();
   }, []);
 
   // Estimate cost when model, duration, mode or audio changes
@@ -541,6 +594,144 @@ const HomePage = () => {
                       </Alert>
                     )}
 
+                    {/* Provider Selection - Only for Premium Veo3 models */}
+                    {selectedMode === 'premium' && (selectedModel === 'veo3' || selectedModel === '') && providers.length > 0 && (
+                      <div>
+                        <label className="label">
+                          <DollarSign className="w-4 h-4 inline mr-1" />
+                          Escolha o Provider (impacta no custo)
+                        </label>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginTop: '0.5rem' }}>
+                          {providers
+                            .filter(p => p.available && (p.id === 'fal_veo3' || p.id === 'google_veo3'))
+                            .map(provider => {
+                              const isSelected = selectedProvider === provider.id;
+                              const costPerVideo = (provider.cost_per_second_with_audio * duration).toFixed(2);
+                              const isGoogle = provider.id === 'google_veo3';
+                              
+                              return (
+                                <motion.div
+                                  key={provider.id}
+                                  whileHover={{ scale: 1.02 }}
+                                  whileTap={{ scale: 0.98 }}
+                                  style={{
+                                    border: isSelected ? '2px solid #10b981' : '2px solid #e5e7eb',
+                                    borderRadius: '12px',
+                                    padding: '1rem',
+                                    cursor: 'pointer',
+                                    backgroundColor: isSelected ? '#f0fdf4' : 'white',
+                                    position: 'relative',
+                                    transition: 'all 0.2s'
+                                  }}
+                                  onClick={() => setSelectedProvider(provider.id)}
+                                >
+                                  {/* Badge de economia */}
+                                  {isGoogle && (
+                                    <div style={{
+                                      position: 'absolute',
+                                      top: '-8px',
+                                      right: '10px',
+                                      backgroundColor: '#10b981',
+                                      color: 'white',
+                                      padding: '4px 12px',
+                                      borderRadius: '12px',
+                                      fontSize: '0.75rem',
+                                      fontWeight: 'bold',
+                                      boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
+                                    }}>
+                                      ⭐ ECONOMIZE {provider.savings_vs_fal}
+                                    </div>
+                                  )}
+                                  
+                                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                    <div style={{
+                                      width: '40px',
+                                      height: '40px',
+                                      borderRadius: '8px',
+                                      backgroundColor: isSelected ? '#10b981' : '#e5e7eb',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      marginRight: '0.75rem'
+                                    }}>
+                                      {isSelected ? (
+                                        <span style={{ fontSize: '1.5rem' }}>✓</span>
+                                      ) : (
+                                        <Video className="w-5 h-5" style={{ color: '#6b7280' }} />
+                                      )}
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                      <div style={{ fontWeight: 'bold', fontSize: '1rem', color: '#1f2937' }}>
+                                        {provider.name}
+                                      </div>
+                                      <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                                        {provider.provider === 'google' ? '🚀 Direto via Vertex AI' : '⚡ Via FAL.AI'}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  <div style={{ marginBottom: '0.5rem' }}>
+                                    <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.25rem' }}>
+                                      {provider.description}
+                                    </div>
+                                  </div>
+                                  
+                                  <div style={{ 
+                                    display: 'flex', 
+                                    justifyContent: 'space-between', 
+                                    alignItems: 'center',
+                                    paddingTop: '0.75rem',
+                                    borderTop: '1px solid #e5e7eb'
+                                  }}>
+                                    <div>
+                                      <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                                        Vídeo {duration}s com áudio
+                                      </div>
+                                      <div style={{ 
+                                        fontSize: '1.5rem', 
+                                        fontWeight: 'bold',
+                                        color: isGoogle ? '#10b981' : '#1f2937'
+                                      }}>
+                                        ${costPerVideo}
+                                      </div>
+                                    </div>
+                                    
+                                    {isGoogle && (
+                                      <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                                          vs FAL.AI
+                                        </div>
+                                        <div style={{ 
+                                          fontSize: '1rem', 
+                                          fontWeight: 'bold',
+                                          color: '#10b981'
+                                        }}>
+                                          -${(
+                                            (providers.find(p => p.id === 'fal_veo3')?.cost_per_second_with_audio || 0.4) * duration -
+                                            provider.cost_per_second_with_audio * duration
+                                          ).toFixed(2)}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </motion.div>
+                              );
+                            })}
+                        </div>
+                        
+                        {/* Summary */}
+                        {selectedProvider === 'google_veo3' && (
+                          <Alert style={{ marginTop: '1rem', backgroundColor: '#f0fdf4', borderColor: '#10b981' }}>
+                            <DollarSign className="h-4 w-4" />
+                            <AlertDescription>
+                              <strong>💰 Economia Mensal:</strong> Com Google Vertex AI, em 100 vídeos você economiza 
+                              <strong> $200/mês</strong> comparado ao FAL.AI (${(0.4 * duration * 100).toFixed(0)} vs ${(0.15 * duration * 100).toFixed(0)})
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </div>
+                    )}
+
                     <div>
                       <label className="label">Modelo de IA</label>
                       <Select value={selectedModel} onValueChange={(newModel) => {
@@ -680,11 +871,16 @@ const HomePage = () => {
                       className="w-full" 
                       size="lg"
                       onClick={() => {
-                        // Veo 3 e Sora 2 geram áudio nativo, pular etapa de áudio
+                        console.log('🎬 Button clicked - Model:', selectedModel);
+                        // Veo 3.1 e Sora 2 geram áudio nativo automaticamente
+                        // Vai direto para geração (step 4)
                         if (selectedModel === 'veo3' || selectedModel === 'sora2') {
-                          generateVideo();
+                          console.log('✅ Going directly to video generation (with native audio)');
+                          generateVideo(); // Vai para step 4 dentro da função
                         } else {
-                          // Wav2lip e outros precisam de áudio separado
+                          // Wav2lip e outros modelos precisam de áudio separado
+                          // Vai para configuração de áudio (step 3)
+                          console.log('⚙️ Going to audio configuration step');
                           setStep(3);
                         }
                       }}

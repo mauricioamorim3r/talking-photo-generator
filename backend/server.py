@@ -950,43 +950,68 @@ async def generate_video(request: GenerateVideoRequest):
         doc['timestamp'] = doc['timestamp'].isoformat()
         await database.insert_video_generation(doc)
         
-        # Generate video based on model and mode
+        # Generate video based on model, mode, and provider
         result_url = None
         
         if request.mode == "premium":
-            # Premium models via FAL.AI
+            # Veo 3.1 - Usar provider correto (FAL.AI ou Google Direct)
             if request.model == "veo3":
-                import asyncio
-                # Veo 3 only accepts "8s" duration format
-                veo3_duration = "8s"  # Fixed duration for Veo 3
-                handler = fal_client.submit(
-                    "fal-ai/veo3.1/image-to-video",
-                    arguments={
-                        "image_url": request.image_url,
-                        "prompt": sanitized_prompt,  # Use sanitized prompt
-                        "duration": veo3_duration
-                    }
+                logger.info(f"🎬 Generating Veo 3.1 video with provider: {request.provider}")
+                logger.info(f"   Image: {request.image_url[:100]}")
+                logger.info(f"   Prompt: {sanitized_prompt}")
+                logger.info(f"   Duration: {request.duration}s")
+                
+                # Usar video_providers.py para gerenciar providers
+                from video_providers import VideoProviderManager, VideoProvider
+                
+                provider_manager = VideoProviderManager()
+                
+                # Map provider name to VideoProvider enum
+                if request.provider == "google":
+                    provider_enum = VideoProvider.GOOGLE_VEO3_DIRECT
+                    logger.info("✅ Using Google Veo 3.1 Direct API (via veo31_direct.py)")
+                else:
+                    provider_enum = VideoProvider.FAL_VEO3
+                    logger.info("✅ Using FAL.AI for Veo 3.1")
+                
+                # Generate via provider
+                result = await provider_manager.generate_video(
+                    provider=provider_enum,
+                    image_url=request.image_url,
+                    prompt=sanitized_prompt,
+                    duration=request.duration
                 )
-                # Run in executor to avoid blocking
-                result = await asyncio.get_event_loop().run_in_executor(
-                    None, handler.get
-                )
-                result_url = result.get('video', {}).get('url')
+                
+                # VideoGenerationResult é um objeto, não dict
+                result_url = result.video_url
+                cost = result.cost  # Update cost with actual value
+                logger.info(f"✅ Video generated successfully: {result_url}")
+                logger.info(f"💰 Actual cost: ${cost:.2f}")
                 
             elif request.model == "sora2":
-                import asyncio
-                handler = fal_client.submit(
-                    "fal-ai/sora-2/image-to-video",
-                    arguments={
-                        "image_url": request.image_url,
-                        "prompt": sanitized_prompt  # Use sanitized prompt
-                    }
+                logger.info(f"🎬 Generating Sora 2 video with provider: {request.provider}")
+                
+                # Usar video_providers.py
+                from video_providers import VideoProviderManager, VideoProvider
+                
+                provider_manager = VideoProviderManager()
+                
+                # Sora 2 atualmente só via FAL.AI
+                provider_enum = VideoProvider.FAL_SORA2
+                logger.info("✅ Using FAL.AI for Sora 2")
+                
+                result = await provider_manager.generate_video(
+                    provider=provider_enum,
+                    image_url=request.image_url,
+                    prompt=sanitized_prompt,
+                    duration=request.duration
                 )
-                # Run in executor to avoid blocking
-                result = await asyncio.get_event_loop().run_in_executor(
-                    None, handler.get
-                )
-                result_url = result.get('video', {}).get('url')
+                
+                # VideoGenerationResult é um objeto
+                result_url = result.video_url
+                cost = result.cost  # Update cost
+                logger.info(f"✅ Sora 2 video generated: {result_url}")
+                logger.info(f"💰 Actual cost: ${cost:.2f}")
                 
             elif request.model == "wav2lip":
                 if not request.audio_url:
@@ -1069,11 +1094,58 @@ async def generate_video(request: GenerateVideoRequest):
         }
         
     except Exception as e:
-        logger.error(f"Error generating video: {str(e)}")
+        logger.error(f"❌ Error generating video: {str(e)}")
+        logger.error(f"❌ Error type: {type(e).__name__}")
+        logger.error(f"❌ Full error details: {repr(e)}")
         
-        # Check if it's a content policy violation
+        # Try to extract detailed error from FAL.AI response
         error_message = str(e)
-        if 'content_policy_violation' in error_message or 'content checker' in error_message:
+        error_detail = None
+        
+        # Check if it's a FAL.AI API error with more details
+        if hasattr(e, 'args') and len(e.args) > 0:
+            error_detail = str(e.args[0])
+            logger.error(f"❌ Error detail: {error_detail}")
+        
+        # Check for specific FAL.AI error patterns
+        error_lower = error_message.lower()
+        
+        # Pattern 1: Actual content policy violations
+        is_content_policy = (
+            'content_policy_violation' in error_lower or 
+            'content policy' in error_lower or
+            'violates our content policy' in error_lower or
+            'blocked by safety' in error_lower or
+            'safety filter' in error_lower
+        )
+        
+        # Pattern 2: Authentication/API key errors
+        is_auth_error = (
+            'unauthorized' in error_lower or
+            'invalid api key' in error_lower or
+            'authentication failed' in error_lower or
+            '401' in error_message or
+            '403' in error_message
+        )
+        
+        # Pattern 3: Invalid parameters
+        is_param_error = (
+            'invalid parameter' in error_lower or
+            'bad request' in error_lower or
+            '400' in error_message or
+            'validation error' in error_lower
+        )
+        
+        # Pattern 4: Service unavailable
+        is_service_error = (
+            '503' in error_message or
+            '502' in error_message or
+            'service unavailable' in error_lower or
+            'timeout' in error_lower
+        )
+        
+        # Generate user-friendly messages based on error type
+        if is_content_policy:
             friendly_message = """⚠️ Política de Conteúdo: O prompt contém termos que foram bloqueados pela política de conteúdo da IA.
 
 Dicas para resolver:
@@ -1083,9 +1155,24 @@ Dicas para resolver:
 
 Exemplo: Em vez de "T-Rex ameaçador rugindo", use "T-Rex impressionante com boca aberta"."""
             error_code = "CONTENT_POLICY"
+            
+        elif is_auth_error:
+            friendly_message = "❌ Erro de Autenticação: Chave de API FAL.AI inválida ou expirada. Verifique suas credenciais."
+            error_code = "AUTH_ERROR"
+            
+        elif is_param_error:
+            friendly_message = f"❌ Parâmetros Inválidos: {error_message}\n\nVerifique se a imagem está acessível e o prompt está correto."
+            error_code = "INVALID_PARAMS"
+            
+        elif is_service_error:
+            friendly_message = "❌ Serviço Temporariamente Indisponível: O servidor FAL.AI está sobrecarregado. Tente novamente em alguns minutos."
+            error_code = "SERVICE_UNAVAILABLE"
+            
         else:
-            friendly_message = f"Erro ao gerar vídeo: {error_message}"
+            # Unknown error - show actual error message for debugging
+            friendly_message = f"❌ Erro ao gerar vídeo:\n\n{error_message}\n\nDetalhes técnicos: {error_detail or 'N/A'}"
             error_code = "GENERATION_ERROR"
+            logger.error(f"❌ UNKNOWN ERROR TYPE - Full message: {error_message}")
         
         # Update record with error
         await database.update_video_generation(video_id, {
