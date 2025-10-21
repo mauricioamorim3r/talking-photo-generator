@@ -30,14 +30,48 @@ class Veo31DirectSimple:
         self.project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT", "talking-photo-gen-441622")
         self.location = location
         self.base_url = f"https://{location}-aiplatform.googleapis.com/v1"
+        self.access_token = None
         
-        if not self.api_key:
-            logger.warning(
-                "⚠️ Google Vertex API Key não encontrada. "
-                "Configure GOOGLE_VERTEX_API_KEY no .env"
-            )
+        # Detecta método de autenticação
+        if self.api_key:
+            logger.info("✅ Using API Key authentication")
+        else:
+            # Tenta usar Service Account
+            credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+            if credentials_path:
+                logger.info(f"✅ Using Service Account authentication: {credentials_path}")
+                self._load_service_account_token()
+            else:
+                logger.warning(
+                    "⚠️ Nenhuma autenticação configurada. "
+                    "Configure GOOGLE_VERTEX_API_KEY ou GOOGLE_APPLICATION_CREDENTIALS no .env"
+                )
         
         logger.info(f"✅ Veo 3.1 Direct configurado (project: {self.project_id}, region: {location})")
+    
+    def _load_service_account_token(self):
+        """Load access token from Service Account credentials"""
+        try:
+            from google.oauth2 import service_account
+            from google.auth.transport.requests import Request
+            
+            credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+            
+            # Carrega credenciais
+            credentials = service_account.Credentials.from_service_account_file(
+                credentials_path,
+                scopes=['https://www.googleapis.com/auth/cloud-platform']
+            )
+            
+            # Obtém token
+            credentials.refresh(Request())
+            self.access_token = credentials.token
+            
+            logger.info("✅ Service Account token obtained successfully")
+            
+        except Exception as e:
+            logger.error(f"❌ Error loading Service Account credentials: {e}")
+            raise
     
     def _load_image_bytes(self, image_url: str) -> bytes:
         """Load image from URL or local file"""
@@ -99,9 +133,13 @@ class Veo31DirectSimple:
                 "Content-Type": "application/json",
             }
             
-            # Se tiver API Key, usa ela
+            # Autenticação: API Key ou Service Account
             if self.api_key:
                 endpoint += f"?key={self.api_key}"
+            elif self.access_token:
+                headers["Authorization"] = f"Bearer {self.access_token}"
+            else:
+                raise RuntimeError("No authentication configured (API Key or Service Account)")
             
             # Request payload
             payload = {
