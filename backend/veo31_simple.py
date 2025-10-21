@@ -54,8 +54,21 @@ class Veo31DirectSimple:
         try:
             from google.oauth2 import service_account
             from google.auth.transport.requests import Request
+            import os.path
             
             credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+            
+            # Resolve caminho relativo
+            if not os.path.isabs(credentials_path):
+                # Se for relativo, resolve a partir do diretório do backend
+                backend_dir = os.path.dirname(os.path.abspath(__file__))
+                credentials_path = os.path.join(backend_dir, credentials_path)
+            
+            # Verifica se arquivo existe
+            if not os.path.exists(credentials_path):
+                raise FileNotFoundError(f"Service Account file not found: {credentials_path}")
+            
+            logger.info(f"📁 Loading credentials from: {credentials_path}")
             
             # Carrega credenciais
             credentials = service_account.Credentials.from_service_account_file(

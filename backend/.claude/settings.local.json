@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/appsMau/FabricaAlegria/talking-photo-generator/frontend/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

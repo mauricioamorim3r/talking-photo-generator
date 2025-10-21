@@ -27,7 +27,8 @@ class VideoProvider(str, Enum):
     FAL_VEO3 = "fal_veo3"
     FAL_SORA2 = "fal_sora2"
     FAL_WAV2LIP = "fal_wav2lip"
-    GOOGLE_VEO3_DIRECT = "google_veo3"
+    GOOGLE_VEO31_GEMINI = "google_veo31_gemini"  # Novo: Gemini API (62% mais barato)
+    GOOGLE_VEO3_DIRECT = "google_veo3"  # Deprecado: Vertex AI (modelo ainda não disponível)
 
 
 class VideoGenerationResult:
@@ -64,11 +65,13 @@ class VideoProviderManager:
     
     def __init__(self):
         self.fal_available = self._check_fal()
-        self.google_available = self._check_google()
+        self.google_gemini_available = self._check_google_gemini()
+        self.google_vertex_available = self._check_google_vertex()
         
         logger.info(f"🎬 Video Providers Disponíveis:")
         logger.info(f"  - FAL.AI: {'✅' if self.fal_available else '❌'}")
-        logger.info(f"  - Google Veo Direct: {'✅' if self.google_available else '❌'}")
+        logger.info(f"  - Google Veo 3.1 (Gemini API): {'✅' if self.google_gemini_available else '❌'}")
+        logger.info(f"  - Google Veo Direct (Vertex): {'✅' if self.google_vertex_available else '❌'}")
     
     def _check_fal(self) -> bool:
         """Verifica se FAL.AI está configurado"""
@@ -83,8 +86,19 @@ class VideoProviderManager:
             logger.warning("⚠️ fal_client não instalado")
             return False
     
-    def _check_google(self) -> bool:
-        """Verifica se Google Vertex AI está configurado"""
+    def _check_google_gemini(self) -> bool:
+        """Verifica se Google Gemini API está configurado (Veo 3.1)"""
+        gemini_key = os.getenv("GEMINI_KEY")
+        
+        if gemini_key:
+            logger.info("✅ Google Veo 3.1 (Gemini API) configurado")
+            return True
+        
+        logger.warning("⚠️ GEMINI_KEY não configurada")
+        return False
+    
+    def _check_google_vertex(self) -> bool:
+        """Verifica se Google Vertex AI está configurado (Deprecado - modelo não disponível)"""
         # Método 1: API Key (mais simples e rápido)
         api_key = os.getenv("GOOGLE_VERTEX_API_KEY")
         
@@ -140,8 +154,11 @@ class VideoProviderManager:
         if provider in [VideoProvider.FAL_VEO3, VideoProvider.FAL_SORA2, VideoProvider.FAL_WAV2LIP]:
             return await self._generate_via_fal(provider, image_url, prompt, duration, with_audio)
         
+        elif provider == VideoProvider.GOOGLE_VEO31_GEMINI:
+            return await self._generate_via_google_gemini(image_url, prompt, duration, with_audio, aspect_ratio)
+        
         elif provider == VideoProvider.GOOGLE_VEO3_DIRECT:
-            return await self._generate_via_google(image_url, prompt, duration, with_audio, aspect_ratio)
+            return await self._generate_via_google_vertex(image_url, prompt, duration, with_audio, aspect_ratio)
         
         else:
             raise ValueError(f"Provider não suportado: {provider}")
@@ -216,7 +233,7 @@ class VideoProviderManager:
             status="success"
         )
     
-    async def _generate_via_google(
+    async def _generate_via_google_gemini(
         self,
         image_url: str,
         prompt: str,
@@ -224,64 +241,90 @@ class VideoProviderManager:
         with_audio: bool,
         aspect_ratio: str
     ) -> VideoGenerationResult:
-        """Gera vídeo via Google Veo 3.1 Direct"""
+        """Gera vídeo via Google Veo 3.1 (Gemini API) - 62% mais barato"""
         
-        if not self.google_available:
+        if not self.google_gemini_available:
             raise RuntimeError(
-                "Google Veo Direct não está disponível. "
-                "Configure GOOGLE_VERTEX_API_KEY ou (GOOGLE_CLOUD_PROJECT_ID + GOOGLE_APPLICATION_CREDENTIALS)"
+                "Google Veo 3.1 (Gemini API) não está disponível. "
+                "Configure GEMINI_KEY no arquivo .env"
             )
         
-        logger.info(f"🎬 Gerando vídeo via Google Veo 3.1 Direct: {prompt[:50]}...")
+        logger.info(f"🎬 Gerando vídeo via Google Veo 3.1 (Gemini API): {prompt[:50]}...")
         
-        # Verifica qual método de autenticação usar
-        api_key = os.getenv("GOOGLE_VERTEX_API_KEY")
+        from veo31_gemini import generate_video_veo31_gemini
         
-        if api_key:
-            # Método 1: API Key (mais simples)
-            logger.info("🔑 Usando autenticação via API Key")
-            from veo31_simple import Veo31DirectSimple
-            
-            veo_client = Veo31DirectSimple(api_key=api_key)
-            
-            result = await asyncio.get_event_loop().run_in_executor(
-                None,
-                veo_client.generate_video_from_image,
-                image_url,
-                prompt,
-                duration,
-                with_audio,
-                aspect_ratio
+        # Download image locally (Gemini API requires local file)
+        import tempfile
+        import requests
+        
+        # Download image
+        response = requests.get(image_url)
+        response.raise_for_status()
+        
+        # Save to temp file
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp_file:
+            tmp_file.write(response.content)
+            temp_image_path = tmp_file.name
+        
+        try:
+            # Generate video
+            video_path = await generate_video_veo31_gemini(
+                prompt=prompt,
+                image_path=temp_image_path,
+                duration_seconds=duration,
+                resolution="720p",
+                aspect_ratio=aspect_ratio
             )
-        else:
-            # Método 2: Service Account
-            logger.info("🔑 Usando autenticação via Service Account")
-            from veo31_direct import Veo31DirectAPI
             
-            project_id = os.getenv("GOOGLE_CLOUD_PROJECT_ID")
-            location = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
+            # Upload video to get URL (você pode usar Cloudinary ou outro serviço)
+            # Por enquanto, retorna path local
+            video_url = f"file://{video_path}"
             
-            veo_client = Veo31DirectAPI(project_id=project_id, location=location)
+            # Calcula custo (Gemini API é 62% mais barato que FAL.AI)
+            # FAL.AI: $0.20/sec sem áudio, $0.40/sec com áudio
+            # Gemini: $0.076/sec (fixo, com áudio nativo)
+            cost = duration * 0.076
             
-            result = await asyncio.get_event_loop().run_in_executor(
-                None,
-                veo_client.generate_video_from_image,
-                image_url,
-                prompt,
-                duration,
-                with_audio,
-                aspect_ratio
+            logger.info(f"✅ Vídeo gerado via Gemini! Custo: ${cost:.2f} (62% economia)")
+            
+            return VideoGenerationResult(
+                video_url=video_url,
+                provider="google_veo31_gemini",
+                duration=duration,
+                cost=cost,
+                with_audio=True,  # Veo 3.1 sempre gera com áudio
+                status="success"
             )
         
-        logger.info(f"✅ Vídeo gerado via Google! Custo: ${result['cost']:.2f}")
+        finally:
+            # Clean up temp file
+            import os
+            if os.path.exists(temp_image_path):
+                os.unlink(temp_image_path)
+    
+    async def _generate_via_google_vertex(
+        self,
+        image_url: str,
+        prompt: str,
+        duration: int,
+        with_audio: bool,
+        aspect_ratio: str
+    ) -> VideoGenerationResult:
+        """Gera vídeo via Google Veo Direct (Vertex AI) - DEPRECADO: modelo não disponível"""
         
-        return VideoGenerationResult(
-            video_url=result['video_url'],
-            provider="google_veo3",
-            duration=result['duration'],
-            cost=result['cost'],
-            with_audio=with_audio,
-            status=result['status']
+        if not self.google_vertex_available:
+            raise RuntimeError(
+                "Google Veo Direct (Vertex) não está disponível. "
+                "NOTA: Este modelo ainda não está liberado publicamente. "
+                "Use google_veo31_gemini ao invés."
+            )
+        
+        logger.warning("⚠️ Google Veo Direct (Vertex) ainda não está disponível publicamente")
+        logger.info("💡 Sugestão: Use provider 'google_veo31_gemini' (Gemini API)")
+        
+        raise RuntimeError(
+            "Google Veo 3.1 Direct (Vertex AI) ainda não está disponível publicamente. "
+            "Use provider 'google_veo31_gemini' para acessar via Gemini API."
         )
     
     def estimate_cost(
@@ -290,13 +333,23 @@ class VideoProviderManager:
         duration: int,
         with_audio: bool = False
     ) -> float:
-        """Estima custo de geração"""
+        """
+        Estima custo de geração
+        
+        Tabela de preços (USD por segundo):
+        - FAL Veo 3: $0.40/s (com áudio) ou $0.20/s (sem áudio)
+        - FAL Sora 2: $0.30/s (com áudio) ou $0.15/s (sem áudio)
+        - FAL Wav2Lip: $0.10/s
+        - Google Veo 3.1 (Gemini): $0.076/s (com áudio nativo) - 62% ECONOMIA! 🎉
+        - Google Veo Direct (Vertex): Não disponível ainda
+        """
         
         cost_table = {
             VideoProvider.FAL_VEO3: 0.40 if with_audio else 0.20,
             VideoProvider.FAL_SORA2: 0.30 if with_audio else 0.15,
             VideoProvider.FAL_WAV2LIP: 0.10,
-            VideoProvider.GOOGLE_VEO3_DIRECT: 0.15 if with_audio else 0.12
+            VideoProvider.GOOGLE_VEO31_GEMINI: 0.076,  # Sempre com áudio, 62% mais barato!
+            VideoProvider.GOOGLE_VEO3_DIRECT: 999.99  # Não disponível (erro se usado)
         }
         
         cost_per_sec = cost_table.get(provider, 0.20)
