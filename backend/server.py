@@ -72,7 +72,7 @@ class VideoGeneration(BaseModel):
     image_id: str
     audio_id: Optional[str] = None
     model: Literal["veo3", "sora2", "wav2lip", "open-sora", "wav2lip-free", "google_veo3"]
-    provider: Optional[Literal["fal", "google"]] = "fal"  # Novo: provider separado
+    provider: Optional[Literal["fal", "google", "google_gemini", "google_vertex"]] = "google_gemini"  # Padrão: Gemini (62% economia)
     mode: Literal["premium", "economico"] = "premium"
     prompt: str
     duration: Optional[float] = None
@@ -109,7 +109,7 @@ class GenerateAudioRequest(BaseModel):
 class GenerateVideoRequest(BaseModel):
     image_url: str
     model: Literal["veo3", "sora2", "wav2lip", "open-sora", "wav2lip-free", "google_veo3"]
-    provider: Optional[Literal["fal", "google"]] = "fal"  # Novo: escolha de provider
+    provider: Optional[Literal["fal", "google", "google_gemini", "google_vertex"]] = "google_gemini"  # Padrão: Gemini (62% economia)
     mode: Literal["premium", "economico"] = "premium"
     prompt: str
     audio_url: Optional[str] = None
@@ -118,7 +118,7 @@ class GenerateVideoRequest(BaseModel):
 
 class EstimateCostRequest(BaseModel):
     model: Literal["veo3", "sora2", "wav2lip", "open-sora", "wav2lip-free", "google_veo3"]
-    provider: Optional[Literal["fal", "google"]] = "fal"  # Novo
+    provider: Optional[Literal["fal", "google", "google_gemini", "google_vertex"]] = "google_gemini"  # Padrão: Gemini
     mode: Literal["premium", "economico"] = "premium"
     duration: int
     with_audio: bool = False
@@ -695,35 +695,61 @@ async def generate_audio(request: GenerateAudioRequest):
 
 @api_router.post("/video/estimate-cost")
 async def estimate_cost(request: EstimateCostRequest):
-    """Estimate video generation cost"""
+    """Estimate video generation cost based on provider and model"""
     try:
         cost = 0.0
+        savings_info = None
         
         if request.mode == "economico":
             # Modelos gratuitos do HuggingFace
             cost = 0.0
         else:
-            # Modelos premium (FAL.AI)
+            # Modelos premium - custo depende do provider
             if request.model == "veo3":
-                if request.with_audio:
-                    cost = request.duration * 0.40
+                # Google Veo 3.1 - custo varia por provider
+                if request.provider == "google_gemini":
+                    # Gemini API: $0.076/segundo (sempre com áudio)
+                    cost = request.duration * 0.076
+                    fal_cost = request.duration * 0.40  # FAL com áudio
+                    savings = fal_cost - cost
+                    savings_info = {
+                        "fal_cost": round(fal_cost, 2),
+                        "savings": round(savings, 2),
+                        "savings_percentage": "62%"
+                    }
+                elif request.provider == "google_vertex":
+                    # Vertex AI: modelo não disponível ainda
+                    cost = request.duration * 0.12
+                elif request.provider == "google":
+                    # Legacy: tenta Gemini primeiro
+                    cost = request.duration * 0.076
                 else:
-                    cost = request.duration * 0.20
+                    # FAL.AI (backup)
+                    if request.with_audio:
+                        cost = request.duration * 0.40
+                    else:
+                        cost = request.duration * 0.20
             elif request.model == "sora2":
                 cost = request.duration * 0.10
             elif request.model == "wav2lip":
-                # Wav2lip pricing (estimate)
                 cost = request.duration * 0.05
         
-        return {
+        response = {
             "success": True,
             "estimated_cost": round(cost, 2),
             "model": request.model,
+            "provider": request.provider,
             "mode": request.mode,
             "duration": request.duration,
             "with_audio": request.with_audio,
             "is_free": request.mode == "economico"
         }
+        
+        if savings_info:
+            response["savings"] = savings_info
+        
+        return response
+        
     except Exception as e:
         logger.error(f"Error estimating cost: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -745,13 +771,30 @@ async def get_video_providers():
         
         providers_info = []
         
-        # FAL.AI Veo 3.1
+        # Google Veo 3.1 (Gemini API) - RECOMENDADO (62% mais barato)
+        if providers_status.get(VideoProvider.GOOGLE_VEO31_GEMINI):
+            providers_info.append({
+                "id": "google_veo31_gemini",
+                "name": "Veo 3.1 (Gemini API) ⭐",
+                "provider": "google_gemini",
+                "description": "Google Veo 3.1 via Gemini API - 62% ECONOMIA + Áudio Nativo",
+                "available": True,
+                "cost_per_second": 0.076,
+                "cost_per_second_with_audio": 0.076,  # Áudio sempre incluído
+                "max_duration": 8,
+                "supports_audio": True,
+                "quality": "premium",
+                "savings_vs_fal": "62%",
+                "recommended": True
+            })
+        
+        # FAL.AI Veo 3.1 - Backup
         if providers_status.get(VideoProvider.FAL_VEO3):
             providers_info.append({
                 "id": "fal_veo3",
                 "name": "Veo 3.1 (FAL.AI)",
                 "provider": "fal",
-                "description": "Google Veo 3.1 via FAL.AI - Alta qualidade, múltiplas resoluções",
+                "description": "Google Veo 3.1 via FAL.AI - Backup confiável",
                 "available": True,
                 "cost_per_second": 0.20,
                 "cost_per_second_with_audio": 0.40,
@@ -775,26 +818,39 @@ async def get_video_providers():
                 "quality": "premium"
             })
         
-        # Google Veo 3.1 Direct
+        # Google Veo 3.1 Direct (Vertex) - Deprecado
         if providers_status.get(VideoProvider.GOOGLE_VEO3_DIRECT):
             providers_info.append({
-                "id": "google_veo3",
-                "name": "Veo 3.1 (Google Direct)",
-                "provider": "google",
-                "description": "Google Veo 3.1 direto via Vertex AI - 60% mais barato que FAL.AI",
-                "available": True,
+                "id": "google_veo3_vertex",
+                "name": "Veo 3.1 (Vertex AI) ⚠️",
+                "provider": "google_vertex",
+                "description": "Google Veo Direct via Vertex AI - Modelo não disponível ainda",
+                "available": False,
                 "cost_per_second": 0.12,
                 "cost_per_second_with_audio": 0.15,
                 "max_duration": 8,
                 "supports_audio": True,
                 "quality": "premium",
-                "savings_vs_fal": "60%"
+                "deprecated": True
             })
+        
+        # Define provider padrão: Gemini > FAL Veo3 > FAL Sora2
+        default_provider = "google_veo31_gemini"
+        if not providers_status.get(VideoProvider.GOOGLE_VEO31_GEMINI):
+            if providers_status.get(VideoProvider.FAL_VEO3):
+                default_provider = "fal_veo3"
+            elif providers_status.get(VideoProvider.FAL_SORA2):
+                default_provider = "fal_sora2"
         
         return {
             "success": True,
             "providers": providers_info,
-            "default_provider": "fal_veo3" if providers_status.get(VideoProvider.FAL_VEO3) else "google_veo3"
+            "default_provider": default_provider,
+            "recommendation": {
+                "provider": "google_veo31_gemini",
+                "reason": "62% mais barato + áudio nativo incluído",
+                "savings": "$2.59 por vídeo de 8s (vs FAL.AI)"
+            }
         }
     
     except Exception as e:
@@ -954,7 +1010,7 @@ async def generate_video(request: GenerateVideoRequest):
         result_url = None
         
         if request.mode == "premium":
-            # Veo 3.1 - Usar provider correto (FAL.AI ou Google Direct)
+            # Veo 3.1 - Usar provider correto (Gemini API recomendado, FAL.AI backup)
             if request.model == "veo3":
                 logger.info(f"🎬 Generating Veo 3.1 video with provider: {request.provider}")
                 logger.info(f"   Image: {request.image_url[:100]}")
@@ -967,12 +1023,24 @@ async def generate_video(request: GenerateVideoRequest):
                 provider_manager = VideoProviderManager()
                 
                 # Map provider name to VideoProvider enum
-                if request.provider == "google":
+                # Prioridade: google_gemini > fal > google_vertex (deprecado)
+                if request.provider == "google_gemini":
+                    provider_enum = VideoProvider.GOOGLE_VEO31_GEMINI
+                    logger.info("⭐ Using Google Veo 3.1 (Gemini API) - 62% ECONOMIA!")
+                elif request.provider == "google_vertex":
                     provider_enum = VideoProvider.GOOGLE_VEO3_DIRECT
-                    logger.info("✅ Using Google Veo 3.1 Direct API (via veo31_direct.py)")
+                    logger.info("⚠️ Using Google Veo Direct (Vertex) - modelo não disponível")
+                elif request.provider == "google":
+                    # Legacy: tenta Gemini primeiro, depois Vertex
+                    if video_manager.google_gemini_available:
+                        provider_enum = VideoProvider.GOOGLE_VEO31_GEMINI
+                        logger.info("⭐ Using Google Veo 3.1 (Gemini API) - auto-selected")
+                    else:
+                        provider_enum = VideoProvider.GOOGLE_VEO3_DIRECT
+                        logger.info("⚠️ Falling back to Google Vertex (not available)")
                 else:
                     provider_enum = VideoProvider.FAL_VEO3
-                    logger.info("✅ Using FAL.AI for Veo 3.1")
+                    logger.info("✅ Using FAL.AI for Veo 3.1 (backup)")
                 
                 # Generate via provider
                 result = await provider_manager.generate_video(

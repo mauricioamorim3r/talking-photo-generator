@@ -124,7 +124,8 @@ class VideoProviderManager:
             VideoProvider.FAL_VEO3: self.fal_available,
             VideoProvider.FAL_SORA2: self.fal_available,
             VideoProvider.FAL_WAV2LIP: self.fal_available,
-            VideoProvider.GOOGLE_VEO3_DIRECT: self.google_available
+            VideoProvider.GOOGLE_VEO31_GEMINI: self.google_gemini_available,
+            VideoProvider.GOOGLE_VEO3_DIRECT: self.google_vertex_available
         }
     
     async def generate_video(
